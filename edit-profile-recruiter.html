@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Edit Profile | EmpowerHer</title>
+    <link rel="stylesheet" type="text/css" href="style/dashboard.css" />
+    <link rel="stylesheet" type="text/css" href="style/edit-profile-recruiter.css" />
+    <!-- Load Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/edit-profile-recruiter.js"></script>
+</head>
+
+<body>
+    <nav>
+        <div class="logo">
+          <a href="recruiter-dashboard.html">
+            <h1>EmpowerHer</h1>
+          </a>
+        </div>
+        <div class="hamburger">
+          <span class="line"></span>
+          <span class="line"></span>
+          <span class="line"></span>
+        </div>
+    </nav>
+    
+    <div class="profile-dropdown">
+        <button id="profile-button" class="profile-btn">
+        <span id="user-initial">U</span>
+        </button>
+        <div class="dropdown-content" id="profile-dropdown-content">
+            <a href="edit-profile-recruiter.html">Edit Profile</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="text">
+           Edit Profile
+        </div>
+        <form id="editProfileForm">
+           <div class="form-row">
+              <div class="input-data">
+                 <input type="text" id="companyName" required>
+                 <label for="companyName">Company Name</label>
+              </div>
+              <div class="input-data">
+                 <input type="text" id="address" required>
+                 <label for="address">Address</label>
+              </div>
+           </div>
+           <div class="form-row">
+              <div class="input-data">
+                 <input type="email" id="email" required>
+                 <label for="email">Email Address</label>
+              </div>
+              <div class="input-data">
+                 <input type="text" id="website" required>
+                 <label for="website">Website</label>
+              </div>
+           </div>
+
+           <div class="form-row">
+            <div class="input-data">
+               <input type="number" id="number" required>
+               <label for="number">Contact Number</label>
+            </div>
+            <div class="input-data">
+               <input type="text" id="industry" required>
+               <label for="industry">Industry</label>
+            </div>
+         </div>
+
+           <div class="form-row">
+              <div class="input-data textarea">
+                 <textarea id="companyOverview" rows="8" cols="80" required></textarea>
+                 <label for="companyOverview">Company Overview</label>
+              </div>
+           </div>
+           <div class="form-row submit-btn">
+              <div class="input-data">
+                 <input type="submit" value="Update">
+              </div>
+           </div>
+        </form>
+        <div id="error-message"></div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+/* Add these styles to your post-job.css or create a new edit-job.css file */
+
+/* Loading indicator */
+#loading-indicator {
+    text-align: center;
+    margin: 20px 0;
+    color: #555;
+    font-weight: bold;
+    display: none;
+  }
+  
+  /* Error message styling */
+  #error-message {
+    background-color: #ffeeee;
+    border-left: 4px solid #e53935;
+    color: #d32f2f;
+    padding: 12px;
+    margin-top: 20px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  /* Style for disabled fields during loading */
+  input:disabled, textarea:disabled, select:disabled {
+    background-color: #f9f9f9;
+    cursor: wait;
+  }
+  
+  /* Back button */
+  .back-btn {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 8px 16px;
+    background-color: #f1f1f1;
+    color: #333;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  
+  .back-btn:hover {
+    background-color: #e0e0e0;
+  }
+  
+  /* Add these styles if you're using form field animations */
+  .input-data input:disabled + label,
+  .input-data textarea:disabled + label,
+  .input-data select:disabled + label {
+    color: #aaa;
+  }

@@ -1,0 +1,194 @@
+@import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
+
+.container {
+  width: 650px;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0px 15px 20px rgba(0,0,0,0.1);
+  margin: 40px auto;
+}
+
+.container .text {
+  font-size: 35px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 100px;
+  color: #fff;
+  user-select: none;
+  border-radius: 15px 15px 0 0;
+  background: linear-gradient(-135deg, #c850c0, #4158d0);
+}
+
+.container form {
+  padding: 10px 30px 30px 30px;
+}
+
+.container form .form-row {
+  display: flex;
+  width: 100%;
+  margin-top: 20px;
+}
+
+form .form-row .input-data {
+  position: relative;
+  width: 100%;
+  height: 50px;
+  margin: 0 10px;
+}
+
+form .form-row .textarea {
+  height: auto;
+  margin-bottom: 30px;
+}
+
+.input-data input,
+.input-data select,
+.textarea textarea {
+  height: 100%;
+  width: 100%;
+  outline: none;
+  font-size: 17px;
+  padding-left: 20px;
+  border: 1px solid lightgrey;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Special styling for the date input */
+.input-data input[type="date"] {
+  padding: 0 20px;
+  color: #4c4c4c;
+}
+
+/* Handle the date input label */
+.date-label {
+  transform: translateY(-130%) !important;
+  font-size: 16px !important;
+  color: #4158d0 !important;
+  background: #fff !important;
+  padding: 0 5px !important;
+}
+
+.textarea textarea {
+  resize: none;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.input-data input:focus,
+.input-data select:focus,
+.textarea textarea:focus,
+.input-data input:valid,
+.input-data select:valid,
+.textarea textarea:valid {
+  border-color: #4158d0;
+}
+
+.input-data label {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  color: #999999;
+  font-weight: 400;
+  font-size: 17px;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: all 0.3s ease;
+}
+
+.textarea label {
+  top: 20px;
+  transform: translateY(0);
+}
+
+.input-data input:focus ~ label,
+.input-data select:focus ~ label,
+.textarea textarea:focus ~ label,
+.input-data input:valid ~ label,
+.input-data select:valid ~ label,
+.textarea textarea:valid ~ label {
+  top: 0%;
+  font-size: 16px;
+  color: #4158d0;
+  background: #fff;
+  transform: translateY(-50%);
+  padding: 0 5px;
+}
+
+/* Special handling for select elements */
+.input-data select:required:invalid {
+  color: #999999;
+}
+
+.input-data select option {
+  color: #333333;
+}
+
+.input-data select option:first-child {
+  display: none;
+}
+
+.textarea textarea:focus ~ label,
+.textarea textarea:valid ~ label {
+  top: -10px;
+  transform: translateY(0);
+}
+
+.submit-btn .input-data {
+  overflow: hidden;
+  height: 50px !important;
+  width: 180px !important;
+  border: none;
+  margin: 30px auto 0;
+}
+
+.submit-btn .input-data input {
+  color: #fff;
+  border: none;
+  padding-left: 0;
+  font-size: 20px;
+  font-weight: 500;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: linear-gradient(-135deg, #c850c0, #4158d0);
+  transition: all 0.3s ease;
+}
+
+.submit-btn .input-data input:active {
+  transform: scale(0.95);
+}
+
+#error-message {
+  text-align: center;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+/* No need for the underline styles anymore */
+.input-data .underline {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .container {
+    width: 90%;
+  }
+  
+  .container .text {
+    font-size: 30px;
+  }
+  
+  .container form .form-row {
+    display: block;
+  }
+  
+  form .form-row .input-data {
+    margin: 35px 10px !important;
+  }
+  
+  .submit-btn .input-data {
+    width: 180px !important;
+  }
+}

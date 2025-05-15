@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Edit Profile | EmpowerHer</title>
+    <link rel="stylesheet" type="text/css" href="style/dashboard.css" />
+    <link rel="stylesheet" type="text/css" href="style/post-job.css" />
+    <!-- Load Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/post-job.js"></script>
+</head>
+
+<body>
+    <nav>
+        <div class="logo">
+          <a href="recruiter-dashboard.html">
+            <h1>EmpowerHer</h1>
+          </a>
+        </div>
+        <div class="hamburger">
+          <span class="line"></span>
+          <span class="line"></span>
+          <span class="line"></span>
+        </div>
+    </nav>
+    
+    <div class="profile-dropdown">
+        <button id="profile-button" class="profile-btn">
+        <span id="user-initial">U</span>
+        </button>
+        <div class="dropdown-content" id="profile-dropdown-content">
+            <a href="edit-profile-recruiter.html">Edit Profile</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </div>
+    </div>
+    <div class="container">
+        <div class="text">
+           Post a New Job
+        </div>
+        <form id="postJobForm">
+           <div class="form-row">
+              <div class="input-data">
+                 <input type="text" id="jobTitle" required>
+                 <label for="jobTitle">Job Title</label>
+              </div>
+              <div class="input-data">
+                 <select id="jobType" required>
+                    <option value="" disabled selected></option>
+                    <option value="Full Time">Full Time</option>
+                    <option value="Part Time">Part Time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                 </select>
+                 <label for="jobType">Job Type</label>
+              </div>
+           </div>
+           
+           <div class="form-row">
+              <div class="input-data">
+                 <select id="modeOfWork" required>
+                    <option value="" disabled selected></option>
+                    <option value="Remote">Remote</option>
+                    <option value="On-site">On-site</option>
+                    <option value="Hybrid">Hybrid</option>
+                 </select>
+                 <label for="modeOfWork">Mode of Work</label>
+              </div>
+              <div class="input-data">
+                 <input type="text" id="location" required>
+                 <label for="location">Location(s)</label>
+              </div>
+           </div>
+
+           <div class="form-row">
+              <div class="input-data">
+                 <input type="text" id="duration" required>
+                 <label for="duration">Duration</label>
+              </div>
+              <div class="input-data">
+                 <input type="text" id="salary" required>
+                 <label for="salary">Stipend/Salary</label>
+              </div>
+           </div>
+
+           <div class="form-row">
+              <div class="input-data">
+                 <input type="date" id="lastDate" required>
+                 <label for="lastDate" class="date-label">Last Date for Submission</label>
+              </div>
+              <div class="input-data">
+                 <input type="text" id="skills" required>
+                 <label for="skills">Required Skills</label>
+              </div>
+           </div>
+
+           <div class="form-row">
+              <div class="input-data textarea">
+                 <textarea id="jobDescription" rows="8" cols="80" required></textarea>
+                 <label for="jobDescription">Job Description</label>
+              </div>
+           </div>
+
+           <div class="form-row">
+              <div class="input-data textarea">
+                 <textarea id="hiringWorkflow" rows="5" cols="80" required></textarea>
+                 <label for="hiringWorkflow">Hiring Workflow Rounds</label>
+              </div>
+           </div>
+
+           <div class="form-row submit-btn">
+              <div class="input-data">
+                 <input type="submit" value="Post Job">
+              </div>
+           </div>
+        </form>
+        <div id="error-message"></div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

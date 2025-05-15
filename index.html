@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmpowerHer | Job Matching Platform</title>
+  <link rel="stylesheet" href="style/auth.css">
+  <!-- Load Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <!-- Load your config first -->
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="title">
+      EmpowerHer
+    </div>
+    
+    <!-- Sign Up Form -->
+    <form id="signupForm" class="auth-form">
+      <div class="sub-title" id="form-title">Create your account</div>
+      
+      <div class="field">
+        <input type="email" id="signup-email" required>
+        <label>Email Address</label>
+      </div>
+      
+      <div class="field">
+        <input type="password" id="signup-password" required>
+        <label>Password</label>
+      </div>
+      
+      <div class="user-type">
+        <p>I am a:</p>
+        <div class="user-type-options">
+          <button type="button" class="user-type-option" data-type="jobseeker">Job Seeker</button>
+          <button type="button" class="user-type-option" data-type="recruiter">Recruiter</button>
+        </div>
+        <input type="hidden" id="user-type" value="jobseeker">
+      </div>
+      
+      <div class="field">
+        <input type="button" value="Sign Up" onclick="signUp()">
+      </div>
+      
+      <div class="signup-link">
+        Already have an account? <a href="#" onclick="toggleForms('login'); return false;">Login instead</a>
+      </div>
+    </form>
+    
+    <!-- Login Form (Initially Hidden) -->
+    <form id="loginForm" class="auth-form hidden">
+      <div class="sub-title" id="login-title">Welcome back</div>
+      
+      <div class="field">
+        <input type="email" id="login-email" required>
+        <label>Email Address</label>
+      </div>
+      
+      <div class="field">
+        <input type="password" id="login-password" required>
+        <label>Password</label>
+      </div>
+      
+      <div class="content">
+        <div class="checkbox">
+          <input type="checkbox" id="remember-me">
+          <label for="remember-me">Remember me</label>
+        </div>
+        <div class="pass-link">
+          <a href="#">Forgot password?</a>
+        </div>
+      </div>
+      
+      <div class="field">
+        <input type="button" value="Login" onclick="login()">
+      </div>
+      
+      <div class="signup-link">
+        Don't have an account? <a href="#" onclick="toggleForms('signup'); return false;">Sign up instead</a>
+      </div>
+    </form>
+    
+    <div id="error-message"></div>
+  </div>
+
+  <script src="js/auth.js"></script>
+</body>
+</html>

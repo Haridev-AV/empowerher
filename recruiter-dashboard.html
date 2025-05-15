@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Recruiter Dashboard | EmpowerHer</title>
+    <link rel="stylesheet" type="text/css" href="style/dashboard.css" />
+    <link rel="stylesheet" type="text/css" href="style/recruiter-dashboard.css" />
+    <!-- Load Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="js/firebase-config.js"></script>
+  </head>
+  <body>
+  
+<nav>
+    <div class="logo">
+      <a href="recruiter-dashboard.html">
+        <h1>EmpowerHer</h1>
+      </a>
+    </div>
+    <div class="hamburger">
+      <span class="line"></span>
+      <span class="line"></span>
+      <span class="line"></span>
+    </div>
+  </nav>
+
+    <div class="dashboard-container">
+      <div class="welcome-card">
+        <h1>Welcome, <span id="company-name">Company</span>!</h1>
+        <p id="profile-status">Loading your profile...</p>
+      </div>
+
+      <div class="dashboard-content">
+        <div class="dashboard-section">
+          <h2>Your Job Listings</h2>
+          <button class="btn btn-primary" id="post-job-btn">
+            Post New Job
+          </button>
+          <div id="jobs-container" class="cards-container">
+            <p>Loading your job listings...</p>
+          </div>
+        </div>
+
+        <div class="dashboard-section">
+          <h2>Recent Applications</h2>
+          <div id="applications-container" class="cards-container">
+            <p>Loading recent applications...</p>
+          </div>
+        </div>
+
+        <div class="dashboard-section">
+          <h2>Dashboard Analytics</h2>
+          <div class="analytics-grid">
+            <div class="analytics-card">
+              <h3>Total Jobs</h3>
+              <p id="total-jobs">0</p>
+            </div>
+            <div class="analytics-card">
+              <h3>Total Applications</h3>
+              <p id="total-applications">0</p>
+            </div>
+            <div class="analytics-card">
+              <h3>Active Interviews</h3>
+              <p id="active-interviews">0</p>
+            </div>
+            <div class="analytics-card">
+              <h3>Positions Filled</h3>
+              <p id="positions-filled">0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-dropdown">
+      <button id="profile-button" class="profile-btn">
+        <span id="user-initial">U</span>
+      </button>
+      <div class="dropdown-content" id="profile-dropdown-content">
+        <a href="edit-profile-recruiter.html">Edit Profile</a>
+        <a href="#" id="logout-btn">Logout</a>
+      </div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+    <script src="js/recruiter-dashboard.js"></script>
+  </body>
+</html>
