@@ -215,7 +215,7 @@ function login() {
       console.error("Login error:", error);
       errorMessage.innerHTML = `
         <div class="alert alert-error">
-          ${error.message}
+          <p>Incorrect Credentials.</p>
         </div>
       `;
     });
