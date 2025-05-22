@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Job Seeker Dashboard | EmpowerHer</title>
+    <link rel="stylesheet" type="text/css" href="style/jobseeker-dashboard.css" />
+    <!-- Load Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="js/firebase-config.js"></script>
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="jobseeker-dashboard.html">
+          <h1>EmpowerHer</h1>
+        </a>
+      </div>
+
+      <div class="hamburger">
+        <span class="line"></span>
+        <span class="line"></span>
+        <span class="line"></span>
+      </div>
+    </nav>
+
+    <div class="menubar">
+      <ul>
+        <li><a href="#jobs">Browse Jobs</a></li>
+        <li><a href="#applications">My Applications</a></li>
+        <li><a href="#profile">Profile</a></li>
+        <li><a href="#resources">Resources</a></li>
+      </ul>
+    </div>
+
+    <div class="profile-dropdown">
+      <button id="profile-button" class="profile-btn">
+        <span id="user-initial">U</span>
+      </button>
+      <div class="dropdown-content" id="profile-dropdown-content">
+        <a href="edit-profile-jobseeker.html">Edit Profile</a>
+        <a href="settings.html">Settings</a>
+        <a href="#" id="logout-btn">Logout</a>
+      </div>
+    </div>
+
+    <div class="dashboard-container">
+      <!-- Welcome Section -->
+      <section class="welcome-section">
+        <div class="welcome-content">
+          <h2 id="welcome-message">Welcome back, <span id="user-name">User</span>!</h2>
+          <p>Ready to find your next opportunity? Let's get started.</p>
+        </div>
+        <div class="quick-stats">
+          <div class="stat-card">
+            <h3 id="applications-count">0</h3>
+            <p>Applications Sent</p>
+          </div>
+          <div class="stat-card">
+            <h3 id="interviews-count">0</h3>
+            <p>Interviews Scheduled</p>
+          </div>
+          <div class="stat-card">
+            <h3 id="saved-jobs-count">0</h3>
+            <p>Saved Jobs</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Job Search Section -->
+      <section class="job-search-section">
+        <h2>Find Your Perfect Job</h2>
+        <div class="search-container">
+          <input type="text" id="job-search" placeholder="Search for jobs, companies, or keywords..." />
+          <select id="location-filter">
+            <option value="">All Locations</option>
+            <option value="remote">Remote</option>
+            <option value="new-york">New York</option>
+            <option value="san-francisco">San Francisco</option>
+            <option value="london">London</option>
+          </select>
+          <select id="category-filter">
+            <option value="">All Categories</option>
+            <option value="technology">Technology</option>
+            <option value="marketing">Marketing</option>
+            <option value="finance">Finance</option>
+            <option value="healthcare">Healthcare</option>
+          </select>
+          <button id="search-btn">Search Jobs</button>
+        </div>
+      </section>
+
+      <!-- Featured Jobs Section -->
+      <section class="featured-jobs-section">
+        <h2>Featured Opportunities</h2>
+        <div class="jobs-grid" id="featured-jobs">
+          <!-- Jobs will be dynamically loaded here -->
+        </div>
+      </section>
+
+      <!-- Recent Applications Section -->
+      <section class="recent-applications-section">
+        <h2>Recent Applications</h2>
+        <div class="applications-list" id="recent-applications">
+          <!-- Recent applications will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Quick Actions Section -->
+      <section class="quick-actions-section">
+        <h2>Quick Actions</h2>
+        <div class="actions-grid">
+          <div class="action-card">
+            <div class="action-icon">📄</div>
+            <h3>Update Resume</h3>
+            <p>Keep your resume current with your latest experience</p>
+            <button class="action-btn">Update Now</button>
+          </div>
+          <div class="action-card">
+            <div class="action-icon">🎯</div>
+            <h3>Set Job Alerts</h3>
+            <p>Get notified when jobs matching your preferences are posted</p>
+            <button class="action-btn">Create Alert</button>
+          </div>
+          <div class="action-card">
+            <div class="action-icon">💼</div>
+            <h3>Company Research</h3>
+            <p>Research companies and prepare for interviews</p>
+            <button class="action-btn">Start Research</button>
+          </div>
+          <div class="action-card">
+            <div class="action-icon">📚</div>
+            <h3>Skill Development</h3>
+            <p>Access courses and resources to enhance your skills</p>
+            <button class="action-btn">Browse Courses</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Career Resources Section -->
+      <section class="resources-section">
+        <h2>Career Resources</h2>
+        <div class="resources-grid">
+          <div class="resource-card">
+            <h3>Resume Templates</h3>
+            <p>Professional templates to make your resume stand out</p>
+            <a href="#" class="resource-link">View Templates</a>
+          </div>
+          <div class="resource-card">
+            <h3>Interview Tips</h3>
+            <p>Expert advice to help you ace your next interview</p>
+            <a href="#" class="resource-link">Read Tips</a>
+          </div>
+          <div class="resource-card">
+            <h3>Salary Guide</h3>
+            <p>Know your worth with our comprehensive salary data</p>
+            <a href="#" class="resource-link">Check Salaries</a>
+          </div>
+          <div class="resource-card">
+            <h3>Networking Events</h3>
+            <p>Connect with professionals in your industry</p>
+            <a href="#" class="resource-link">Find Events</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="js/jobseeker-dashboard.js"></script>
+  </body>
+</html>
