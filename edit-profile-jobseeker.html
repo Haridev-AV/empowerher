@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Edit Profile | EmpowerHer</title>
+    <link rel="stylesheet" type="text/css" href="style/dashboard.css" />
+    <link rel="stylesheet" type="text/css" href="style/edit-profile-jobseeker.css" />
+    <!-- Load Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/edit-profile-jobseeker.js"></script>
+</head>
+
+<body>
+    <nav>
+        <div class="logo">
+          <a href="recruiter-dashboard.html">
+            <h1>EmpowerHer</h1>
+          </a>
+        </div>
+        <div class="hamburger">
+          <span class="line"></span>
+          <span class="line"></span>
+          <span class="line"></span>
+        </div>
+    </nav>
+    
+    <div class="profile-dropdown">
+        <button id="profile-button" class="profile-btn">
+        <span id="user-initial">U</span>
+        </button>
+        <div class="dropdown-content" id="profile-dropdown-content">
+            <a href="edit-profile-recruiter.html">Edit Profile</a>
+            <a href="index.html" id="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="text">
+           Edit Profile
+        </div>
+        <form id="editProfileForm">
+           <div class="form-row">
+              <div class="input-data">
+                 <input type="text" id="firstName" required>
+                 <label for="firstName">First Name</label>
+              </div>
+              <div class="input-data">
+                 <input type="text" id="lastName" required>
+                 <label for="lastName">Last Name</label>
+              </div>
+           </div>
+           <div class="form-row">
+              <div class="input-data">
+                 <input type="home" id="home" required>
+                 <label for="home">Home Address</label>
+              </div>
+              <div class="input-data">
+                 <input type="linkedin" id="linkedin" required>
+                 <label for="linkedin">LinkedIn</label>
+              </div>
+           </div>
+
+           <div class="form-row">
+            <div class="input-data">
+               <input type="number" id="number" required>
+               <label for="number">Contact Number</label>
+            </div>
+            <div class="input-data">
+               <input type="text" id="skills" required>
+               <label for="skills">Skills</label>
+            </div>
+         </div>
+
+           <div class="form-row">
+              <div class="input-data textarea">
+                 <textarea id="profile-desc" rows="8" cols="80" required></textarea>
+                 <label for="profile-desc">Profile Description</label>
+              </div>
+           </div>
+            <!-- Button row with upload and submit buttons -->
+<div class="form-row button-row">
+   <div class="upload-btn" id="upload-container">
+      <div class="input-data">
+         <input type="file" id="resume" accept="application/pdf" required>
+         <label for="resume">Upload Resume</label>
+         <div class="upload-progress" id="upload-progress"></div>
+      </div>
+      <div class="file-display" id="file-display">
+         <span class="file-name" id="file-name"></span>
+         <button type="button" class="remove-file" id="remove-file">×</button>
+      </div>
+   </div>
+   <div class="submit-btn">
+      <div class="input-data">
+         <input type="submit" value="Update">
+      </div>
+   </div>
+</div>
+        </form>
+        <div id="error-message"></div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

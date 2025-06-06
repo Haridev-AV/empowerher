@@ -1,0 +1,424 @@
+@import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
+
+.container {
+  width: 650px;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0px 15px 20px rgba(0,0,0,0.1);
+  margin: 40px auto;
+}
+
+.container .text {
+  font-size: 35px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 100px;
+  color: #fff;
+  user-select: none;
+  border-radius: 15px 15px 0 0;
+  background: linear-gradient(-135deg, #c850c0, #4158d0);
+}
+
+.container form {
+  padding: 10px 30px 30px 30px;
+}
+
+.container form .form-row {
+  display: flex;
+  width: 100%;
+  margin-top: 20px;
+}
+
+form .form-row .input-data {
+  position: relative;
+  width: 100%;
+  height: 50px;
+  margin: 0 10px;
+}
+
+/* Upload button styling with border only */
+.upload-btn .input-data {
+  overflow: visible;
+  height: 50px !important;
+  width: 180px !important;
+  border: none;
+  margin: 30px 10px 0;
+  position: relative;
+}
+
+.upload-btn .input-data input[type="file"] {
+  opacity: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.upload-btn .input-data label {
+  color: #333;
+  border: 2px solid;
+  border-image: linear-gradient(-135deg, #c850c0, #4158d0) 1;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 400;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  border-radius: 25px;
+  position: relative;
+  top: 0;
+  left: 0;
+  transform: none;
+  pointer-events: all;
+}
+
+.upload-btn .input-data label:hover {
+  background: rgba(201, 80, 192, 0.1);
+}
+
+.upload-btn .input-data label:active {
+  background: rgba(201, 80, 192, 0.2);
+}
+
+/* Progress bar styling */
+.upload-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(-135deg, #c850c0, #4158d0);
+  border-radius: 0 0 25px 25px;
+  width: 0%;
+  transition: width 0.3s ease;
+  opacity: 0;
+}
+
+.upload-progress.active {
+  opacity: 1;
+}
+
+/* File display area */
+.file-display {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  width: 180px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #333;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.file-display.show {
+  display: flex;
+}
+
+.file-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+  max-width: calc(100% - 24px);
+}
+
+.remove-file {
+  width: 16px;
+  height: 16px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.remove-file:hover {
+  background: #c82333;
+}
+
+/* Hide upload button when file is selected */
+.upload-btn.has-file .input-data label {
+  display: none;
+}
+
+/* Button row container */
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 30px;
+  position: relative;
+  min-height: 100px;
+}
+
+.submit-btn .input-data {
+  margin: 0 10px 0 0;
+}
+
+.upload-btn .input-data {
+  margin: 0 0 0 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 700px) {
+  .button-row {
+    flex-direction: column;
+    gap: 80px;
+    align-items: center;
+    min-height: auto;
+  }
+  
+  .upload-btn .input-data,
+  .submit-btn .input-data {
+    width: 180px !important;
+    margin: 0 auto;
+  }
+  
+  .file-display {
+    top: 60px;
+    width: 180px;
+  }
+}
+
+/* Button row container */
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px;
+}
+
+.submit-btn .input-data {
+  margin: 0 10px 0 0;
+}
+
+.upload-btn .input-data {
+  margin: 0 0 0 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 700px) {
+  .button-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .upload-btn .input-data,
+  .submit-btn .input-data {
+    width: 180px !important;
+    margin: 0 auto;
+  }
+}
+form .form-row .textarea {
+  height: auto;
+  margin-bottom: 50px; /* Existing style, check if resume field needs adjustment */
+}
+
+.input-data input,
+.textarea textarea {
+  height: 100%;
+  width: 100%;
+  outline: none;
+  font-size: 17px;
+  padding-left: 20px;
+  border: 1px solid lightgrey;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.textarea textarea {
+  resize: none;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.input-data input:focus,
+.textarea textarea:focus,
+.input-data input:valid, /* :valid pseudo-class helps with pre-filled data */
+.textarea textarea:valid {
+  border-color: #4158d0;
+}
+
+/* Specific styling for file input to handle its unique nature with labels */
+.input-data input[type="file"]:focus ~ label,
+.input-data input[type="file"]:valid ~ label, /* May not work consistently for 'valid' on file inputs */
+.input-data input[type="file"].has-data ~ label { /* Custom class for when file is selected */
+  top: -10px;
+  font-size: 16px;
+  color: #4158d0;
+  background: #fff;
+  transform: translateY(0%);
+  padding: 0 5px;
+}
+
+
+.input-data label {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  color: #999999;
+  font-weight: 400;
+  font-size: 17px;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: all 0.3s ease;
+}
+
+/* Adjust label for file input specifically since it doesn't behave like text input */
+.input-data input[type="file"] ~ label {
+  top: 50%; /* Initial position */
+  transform: translateY(-50%);
+}
+
+
+.textarea label {
+  top: 20px;
+  transform: translateY(0);
+}
+
+.input-data input:focus ~ label,
+.textarea textarea:focus ~ label,
+.input-data input:valid ~ label,
+.textarea textarea:valid ~ label,
+.input-data input.has-data ~ label, /* Use .has-data for JS controlled state */
+.textarea textarea.has-data ~ label {
+  top: 0%;
+  font-size: 16px;
+  color: #4158d0;
+  background: #fff;
+  transform: translateY(-50%);
+  padding: 0 5px;
+}
+
+.textarea textarea:focus ~ label,
+.textarea textarea:valid ~ label,
+.textarea textarea.has-data ~ label {
+  top: -10px;
+  transform: translateY(0);
+}
+
+.submit-btn .input-data {
+  overflow: hidden;
+  height: 50px !important;
+  width: 180px !important;
+  border: none;
+  margin: 30px auto 0;
+}
+
+.submit-btn .input-data input {
+  color: #fff;
+  border: none;
+  padding-left: 0;
+  font-size: 20px;
+  font-weight: 500;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: linear-gradient(-135deg, #c850c0, #4158d0);
+  transition: all 0.3s ease;
+}
+
+.submit-btn .input-data input:active {
+  transform: scale(0.95);
+}
+
+/* No need for the underline styles anymore */
+.input-data .underline {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .container {
+    width: 90%;
+  }
+  
+  .container .text {
+    font-size: 30px;
+  }
+  
+  .container form .form-row {
+    display: block;
+  }
+  
+  form .form-row .input-data {
+    margin: 35px 10px !important;
+  }
+  
+  .submit-btn .input-data {
+    width: 180px !important;
+  }
+}
+
+/* Profile Dropdown Styling - (Identical to recruiter version) */
+.profile-dropdown {
+  position: absolute;
+  top: 15px;
+  right: 5%;
+  z-index: 20;
+}
+
+.profile-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(-135deg, #c850c0, #4158d0);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 5px;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+.dropdown-content a:hover {
+  background-color: #f1f1f1;
+  border-radius: 5px;
+}
+
+.profile-dropdown:hover .dropdown-content,
+.dropdown-content.show {
+  display: block;
+}
+
+#error-message {
+    text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
+}
