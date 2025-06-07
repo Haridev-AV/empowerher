@@ -93,36 +93,194 @@ const sampleApplications = [
   }
 ];
 
+// Firebase integration for user display
+let currentFirebaseUser = null;
+let userProfileData = null;
+
+// Function to load user profile data from Firebase
+async function loadUserProfile(userId) {
+  try {
+    const db = firebase.firestore();
+    const docRef = db.collection("jobseekers").doc(userId);
+    const doc = await docRef.get();
+    
+    if (doc.exists) {
+      userProfileData = doc.data();
+      console.log("User profile data loaded:", userProfileData);
+      return userProfileData;
+    } else {
+      console.log("No profile document found for user:", userId);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error loading user profile:", error);
+    return null;
+  }
+}
+
+// Function to update user display with Firebase data
+async function updateUserDisplayFromFirebase(user) {
+  const userInitial = document.getElementById('user-initial');
+  const userName = document.getElementById('user-name');
+  const welcomeMessage = document.getElementById('welcome-message');
+  
+  // Load profile data from Firestore
+  const profileData = await loadUserProfile(user.uid);
+  
+  let displayName = 'User'; // Default fallback
+  let initialLetter = 'U'; // Default fallback
+  
+  if (profileData && profileData.firstName) {
+    // Use first name from profile if available
+    displayName = profileData.firstName;
+    initialLetter = profileData.firstName.charAt(0).toUpperCase();
+    
+    // If both first and last name are available, use full name
+    if (profileData.lastName) {
+      displayName = `${profileData.firstName} ${profileData.lastName}`;
+    }
+  } else if (user.displayName) {
+    // Fallback to Firebase Auth display name
+    displayName = user.displayName;
+    initialLetter = user.displayName.charAt(0).toUpperCase();
+  } else if (user.email) {
+    // Fallback to email
+    displayName = user.email;
+    initialLetter = user.email.charAt(0).toUpperCase();
+  }
+  
+  // Update UI elements
+  if (userInitial) {
+    userInitial.textContent = initialLetter;
+  }
+  
+  if (userName) {
+    userName.textContent = displayName;
+  }
+  
+  // Update welcome message to show profile completion status
+  if (welcomeMessage) {
+    if (profileData && profileData.profileComplete) {
+      welcomeMessage.innerHTML = `Welcome back, <span id="user-name">${displayName}</span>!`;
+    } else {
+      welcomeMessage.innerHTML = `Welcome, <span id="user-name">${displayName}</span>! <small style="color: #666; font-size: 0.8em;">(Complete your profile to get started)</small>`;
+    }
+  }
+}
+
+// Function to check if profile is complete and show appropriate message
+function checkProfileCompletionStatus(profileData) {
+  if (!profileData) {
+    showNotification('Please complete your profile to get the best job recommendations!', 'warning');
+    return false;
+  }
+  
+  const requiredFields = ['firstName', 'lastName', 'contactNumber', 'skills'];
+  const missingFields = requiredFields.filter(field => !profileData[field] || 
+    (Array.isArray(profileData[field]) && profileData[field].length === 0));
+  
+  if (missingFields.length > 0 || !profileData.profileComplete) {
+    showNotification('Complete your profile to improve your job search experience!', 'info');
+    return false;
+  }
+  
+  return true;
+}
+
+// Firebase auth state listener
+if (typeof firebase !== 'undefined' && firebase.auth) {
+  firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+      currentFirebaseUser = user;
+      console.log("User logged in:", user.displayName || user.email);
+      
+      // Update user display with profile data
+      await updateUserDisplayFromFirebase(user);
+      
+      // Check profile completion status
+      checkProfileCompletionStatus(userProfileData);
+      
+      // Initialize dashboard after user data is loaded
+      initializeDashboard();
+    } else {
+      console.log("No user logged in");
+      // Redirect to login if needed
+      window.location.href = 'login.html';
+    }
+  });
+} else {
+  console.warn("Firebase not initialized - using sample data");
+  // Fallback initialization for testing
+  initializeDashboard();
+}
+
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
-  initializeDashboard();
+  // Only initialize if Firebase auth hasn't handled it yet
+  if (!currentFirebaseUser) {
+    console.log("DOM loaded, waiting for Firebase auth...");
+  }
+  
   loadFeaturedJobs();
   loadRecentApplications();
   setupEventListeners();
 });
 
 function initializeDashboard() {
-  // Set user initial (you would get this from Firebase Auth)
-  const userInitial = document.getElementById('user-initial');
-  const userName = document.getElementById('user-name');
-  
-  // This would come from your Firebase user data
-  const currentUser = getCurrentUser();
-  if (currentUser) {
-    userInitial.textContent = currentUser.name.charAt(0).toUpperCase();
-    userName.textContent = currentUser.name;
-  }
+  console.log("Initializing dashboard for user:", currentFirebaseUser?.email || 'unknown');
   
   // Update statistics
   updateStatistics();
+  
+  // If profile data is available, you can customize the dashboard further
+  if (userProfileData) {
+    customizeDashboardForUser(userProfileData);
+  }
+}
+
+function customizeDashboardForUser(profileData) {
+  // Customize dashboard based on user's profile data
+  // For example, filter jobs based on skills, location preferences, etc.
+  
+  if (profileData.skills && profileData.skills.length > 0) {
+    console.log("User skills:", profileData.skills);
+    // You could filter featured jobs based on user skills here
+  }
+  
+  if (profileData.homeAddress) {
+    console.log("User location:", profileData.homeAddress);
+    // You could set default location filter based on user's address
+    const locationFilter = document.getElementById('location-filter');
+    if (locationFilter && profileData.homeAddress) {
+      // This is a simple example - you'd want more sophisticated location matching
+      const userLocation = profileData.homeAddress.toLowerCase();
+      for (let option of locationFilter.options) {
+        if (userLocation.includes(option.value.toLowerCase()) && option.value !== '') {
+          option.selected = true;
+          break;
+        }
+      }
+    }
+  }
 }
 
 function getCurrentUser() {
-  // This would integrate with Firebase Auth
-  // For demo purposes, returning sample user
+  // Return current Firebase user data combined with profile data
+  if (currentFirebaseUser && userProfileData) {
+    return {
+      uid: currentFirebaseUser.uid,
+      email: currentFirebaseUser.email,
+      name: userProfileData.firstName ? 
+        `${userProfileData.firstName} ${userProfileData.lastName || ''}`.trim() : 
+        currentFirebaseUser.displayName || currentFirebaseUser.email,
+      profileData: userProfileData
+    };
+  }
+  
+  // Fallback for demo purposes
   return {
-    name: "Sarah Johnson",
-    email: "sarah.johnson@email.com"
+    name: "User",
+    email: "user@email.com"
   };
 }
 
@@ -135,9 +293,27 @@ function updateStatistics() {
 
 function loadFeaturedJobs() {
   const jobsGrid = document.getElementById('featured-jobs');
+  if (!jobsGrid) return;
+  
   jobsGrid.innerHTML = '';
   
-  sampleJobs.forEach(job => {
+  // Filter jobs based on user skills if available
+  let jobsToShow = sampleJobs;
+  if (userProfileData && userProfileData.skills && userProfileData.skills.length > 0) {
+    // Simple skill-based filtering (in a real app, this would be more sophisticated)
+    const userSkills = userProfileData.skills.map(skill => skill.toLowerCase());
+    jobsToShow = sampleJobs.filter(job => {
+      const jobText = (job.title + ' ' + job.description).toLowerCase();
+      return userSkills.some(skill => jobText.includes(skill));
+    });
+    
+    // If no matches found, show all jobs
+    if (jobsToShow.length === 0) {
+      jobsToShow = sampleJobs;
+    }
+  }
+  
+  jobsToShow.forEach(job => {
     const jobCard = createJobCard(job);
     jobsGrid.appendChild(jobCard);
   });
@@ -169,6 +345,8 @@ function createJobCard(job) {
 
 function loadRecentApplications() {
   const applicationsList = document.getElementById('recent-applications');
+  if (!applicationsList) return;
+  
   applicationsList.innerHTML = '';
   
   if (sampleApplications.length === 0) {
@@ -216,27 +394,29 @@ function setupEventListeners() {
   const locationFilter = document.getElementById('location-filter');
   const categoryFilter = document.getElementById('category-filter');
   
-  searchBtn.addEventListener('click', performJobSearch);
+  if (searchBtn) searchBtn.addEventListener('click', performJobSearch);
   
   // Allow search on Enter key
-  jobSearchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      performJobSearch();
-    }
-  });
+  if (jobSearchInput) {
+    jobSearchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        performJobSearch();
+      }
+    });
+  }
   
   // Quick action buttons
   setupQuickActionListeners();
   
   // Logout functionality
   const logoutBtn = document.getElementById('logout-btn');
-  logoutBtn.addEventListener('click', handleLogout);
+  if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 }
 
 function performJobSearch() {
-  const searchTerm = document.getElementById('job-search').value.toLowerCase();
-  const location = document.getElementById('location-filter').value;
-  const category = document.getElementById('category-filter').value;
+  const searchTerm = document.getElementById('job-search')?.value?.toLowerCase() || '';
+  const location = document.getElementById('location-filter')?.value || '';
+  const category = document.getElementById('category-filter')?.value || '';
   
   let filteredJobs = sampleJobs;
   
@@ -270,6 +450,8 @@ function performJobSearch() {
 
 function displayFilteredJobs(jobs) {
   const jobsGrid = document.getElementById('featured-jobs');
+  if (!jobsGrid) return;
+  
   jobsGrid.innerHTML = '';
   
   if (jobs.length === 0) {
@@ -307,6 +489,15 @@ function setupQuickActionListeners() {
 }
 
 function applyToJob(jobId) {
+  // Check if profile is complete before allowing application
+  if (!userProfileData || !userProfileData.profileComplete) {
+    showNotification('Please complete your profile before applying to jobs!', 'warning');
+    setTimeout(() => {
+      window.location.href = 'edit-profile-jobseeker.html';
+    }, 2000);
+    return;
+  }
+  
   // In a real application, this would send the application to your backend
   const job = sampleJobs.find(j => j.id === jobId);
   if (job) {
@@ -343,9 +534,10 @@ function saveJob(jobId) {
 }
 
 function handleUpdateResume() {
-  showNotification('Redirecting to resume editor...', 'info');
-  // In a real app, redirect to resume editing page
-  // window.location.href = 'resume-editor.html';
+  showNotification('Redirecting to profile editor...', 'info');
+  setTimeout(() => {
+    window.location.href = 'edit-profile-jobseeker.html';
+  }, 1000);
 }
 
 function handleSetJobAlerts() {
@@ -365,16 +557,22 @@ function handleSkillDevelopment() {
 
 function handleLogout() {
   if (confirm('Are you sure you want to logout?')) {
-    // In a real app, this would use Firebase Auth signOut
-    // firebase.auth().signOut().then(() => {
-    //   window.location.href = 'login.html';
-    // });
-    
-    showNotification('Logging out...', 'info');
-    setTimeout(() => {
-      // Simulate logout redirect
-      alert('Logout successful! (In a real app, you would be redirected to login page)');
-    }, 1000);
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      firebase.auth().signOut().then(() => {
+        showNotification('Logged out successfully!', 'success');
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1000);
+      }).catch((error) => {
+        console.error('Logout error:', error);
+        showNotification('Error logging out. Please try again.', 'error');
+      });
+    } else {
+      showNotification('Logging out...', 'info');
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 1000);
+    }
   }
 }
 
@@ -426,7 +624,9 @@ function showNotification(message, type = 'info') {
   setTimeout(() => {
     notification.style.transform = 'translateX(100%)';
     setTimeout(() => {
-      document.body.removeChild(notification);
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
     }, 300);
   }, 3000);
 }

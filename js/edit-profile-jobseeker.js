@@ -1,3 +1,6 @@
+const CLOUDINARY_CLOUD_NAME = CLOUDINARY_CONFIG.CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET = CLOUDINARY_CONFIG.UPLOAD_PRESET;
+
 document.addEventListener("DOMContentLoaded", function () {
     console.log("DOM fully loaded for jobseeker edit profile");
     const form = document.getElementById("editProfileForm");
@@ -21,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const removeFileBtn = document.getElementById('remove-file');
 
     // Check if Firebase is initialized properly
-    if (typeof firebase === 'undefined' || typeof firebase.auth === 'undefined' || typeof firebase.firestore === 'undefined' || typeof firebase.storage === 'undefined') {
+    if (typeof firebase === 'undefined' || typeof firebase.auth === 'undefined' || typeof firebase.firestore === 'undefined') {
         console.error("Firebase SDKs not fully initialized!");
         errorMessage.textContent = "Firebase initialization failed. Check console for details.";
         return;
@@ -30,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const db = firebase.firestore();
-    const storage = firebase.storage();
+    // Note: We no longer need Firebase storage for resume uploads
 
     // Function to apply floating label effect / .has-data class
     function applyFloatingLabels() {
@@ -70,6 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     let currentUser = null;
     let existingResumeURL = null; // To store existing resume URL
+    let existingCloudinaryPublicId = null; // To store Cloudinary public ID for deletion
 
     // Upload functionality with progress bar and file management
     function setupUploadFunctionality() {
@@ -86,15 +90,15 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
                     
-                    // Validate file size (e.g., max 5MB)
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert('File size should be less than 5MB.');
+                    // Validate file size (e.g., max 10MB for Cloudinary free tier)
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('File size should be less than 10MB.');
                         this.value = '';
                         resetUploadDisplay();
                         return;
                     }
                     
-                    // Start upload simulation
+                    // Start upload simulation (keeping your existing progress bar)
                     simulateUpload(file);
                 }
             });
@@ -154,6 +158,61 @@ document.addEventListener("DOMContentLoaded", function () {
         if (uploadContainer) uploadContainer.classList.add('has-file');
     }
 
+    // Function to upload file to Cloudinary
+    async function uploadToCloudinary(file) {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            formData.append('resource_type', 'raw'); // For PDF files
+            formData.append('folder', 'resumes'); // Optional: organize in folders
+
+            const xhr = new XMLHttpRequest();
+            
+            // Don't track upload progress here - let the form submission handle it
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    resolve({
+                        url: response.secure_url,
+                        publicId: response.public_id,
+                        originalFilename: response.original_filename
+                    });
+                } else {
+                    reject(new Error(`Upload failed with status: ${xhr.status}`));
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                reject(new Error('Upload failed'));
+            });
+
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`);
+            xhr.send(formData);
+        });
+    }
+
+    // Function to delete old resume from Cloudinary (optional)
+    async function deleteFromCloudinary(publicId) {
+        try {
+            // Note: Deletion requires server-side implementation due to signature requirements
+            // You'll need to create an API endpoint on your server for this
+            const response = await fetch('/api/delete-cloudinary-file', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ publicId })
+            });
+            
+            if (!response.ok) {
+                console.warn('Failed to delete old resume from Cloudinary');
+            }
+        } catch (error) {
+            console.warn('Error deleting old resume:', error);
+        }
+    }
+
     firebase.auth().onAuthStateChanged(async (user) => {
         console.log("Auth state changed:", user ? `User ${user.uid} logged in` : "No user logged in");
         
@@ -186,7 +245,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (contactNumberInput) contactNumberInput.value = data.contactNumber || "";
                     if (skillsInput) skillsInput.value = data.skills ? data.skills.join(", ") : "";
                     if (profileDescInput) profileDescInput.value = data.profileDescription || "";
+                    
+                    // Store existing resume info
                     existingResumeURL = data.resumeURL || null;
+                    existingCloudinaryPublicId = data.cloudinaryPublicId || null;
 
                     // Show existing resume info if available
                     if (data.resumeFileName && fileName && fileDisplay && uploadContainer) {
@@ -257,15 +319,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 
                 let resumeURL = existingResumeURL;
                 let resumeFileName = null;
+                let cloudinaryPublicId = existingCloudinaryPublicId;
                 const resumeFile = resumeInput ? resumeInput.files[0] : null;
 
                 if (resumeFile) {
                     console.log("New resume file selected:", resumeFile.name);
-                    const storageRef = storage.ref(`jobseeker_resumes/${user.uid}/${Date.now()}_${resumeFile.name}`);
-                    const uploadTask = await storageRef.put(resumeFile);
-                    resumeURL = await uploadTask.ref.getDownloadURL();
-                    resumeFileName = resumeFile.name;
-                    console.log("Resume uploaded, URL:", resumeURL);
+                    
+                    try {
+                        // Upload to Cloudinary
+                        const uploadResult = await uploadToCloudinary(resumeFile);
+                        resumeURL = uploadResult.url;
+                        resumeFileName = resumeFile.name;
+                        cloudinaryPublicId = uploadResult.publicId;
+                        
+                        console.log("Resume uploaded to Cloudinary, URL:", resumeURL);
+                        
+                        // Optionally delete old resume from Cloudinary
+                        if (existingCloudinaryPublicId && existingCloudinaryPublicId !== cloudinaryPublicId) {
+                            await deleteFromCloudinary(existingCloudinaryPublicId);
+                        }
+                        
+                    } catch (uploadError) {
+                        console.error("Error uploading to Cloudinary:", uploadError);
+                        throw new Error("Failed to upload resume. Please try again.");
+                    }
                 } else {
                     // Get existing filename if available
                     const doc = await db.collection("jobseekers").doc(user.uid).get();
@@ -298,6 +375,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 if (resumeFileName) {
                     profileData.resumeFileName = resumeFileName;
+                }
+                if (cloudinaryPublicId) {
+                    profileData.cloudinaryPublicId = cloudinaryPublicId;
                 }
 
                 console.log("Jobseeker profile data to save:", profileData);
