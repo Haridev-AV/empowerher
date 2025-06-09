@@ -533,11 +533,273 @@ function saveJob(jobId) {
   }
 }
 
+// Enhanced handleUpdateResume function with inline upload
 function handleUpdateResume() {
-  showNotification('Redirecting to profile editor...', 'info');
+  createResumeUploadModal();
+}
+
+// Create and show the resume upload modal
+function createResumeUploadModal() {
+  // Remove existing modal if any
+  const existingModal = document.getElementById('resume-upload-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  // Create modal HTML
+  const modalHTML = `
+    <div id="resume-upload-modal" class="resume-modal-overlay">
+      <div class="resume-modal-container">
+        <div class="resume-modal-header">
+          <h3>Update Resume</h3>
+          <button class="resume-modal-close" onclick="closeResumeModal()">×</button>
+        </div>
+        <div class="resume-modal-content">
+          <div class="resume-upload-area">
+            <input type="file" id="resume-modal-input" accept=".pdf" style="display: none;">
+            <label for="resume-modal-input" class="resume-upload-label">
+              <div class="upload-icon">📄</div>
+              <div class="upload-text">
+                <strong>Click to upload resume</strong>
+                <span>PDF files only (max 10MB)</span>
+              </div>
+            </label>
+            <div class="resume-progress-container">
+              <div class="resume-progress-bar" id="resume-modal-progress"></div>
+            </div>
+          </div>
+          <div class="resume-file-display" id="resume-modal-file-display">
+            <div class="file-info">
+              <span class="file-icon">📄</span>
+              <span class="file-name" id="resume-modal-file-name"></span>
+            </div>
+            <button class="file-remove-btn" onclick="removeSelectedFile()">×</button>
+          </div>
+          <div class="resume-modal-actions">
+            <button class="resume-cancel-btn" onclick="closeResumeModal()">Cancel</button>
+            <button class="resume-upload-btn" id="resume-modal-upload" onclick="uploadNewResume()" disabled>
+              Update Resume
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add modal to page
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+  // Setup event listeners
+  setupResumeModalListeners();
+
+  // Show modal with animation
   setTimeout(() => {
-    window.location.href = 'edit-profile-jobseeker.html';
-  }, 1000);
+    document.getElementById('resume-upload-modal').classList.add('show');
+  }, 10);
+}
+
+// Setup event listeners for the modal
+function setupResumeModalListeners() {
+  const fileInput = document.getElementById('resume-modal-input');
+  const uploadBtn = document.getElementById('resume-modal-upload');
+  const fileDisplay = document.getElementById('resume-modal-file-display');
+  const fileName = document.getElementById('resume-modal-file-name');
+  const progressBar = document.getElementById('resume-modal-progress');
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      
+      if (file) {
+        // Validate file type
+        if (file.type !== 'application/pdf') {
+          showNotification('Please select a PDF file only.', 'error');
+          this.value = '';
+          resetModalFileDisplay();
+          return;
+        }
+        
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          showNotification('File size should be less than 10MB.', 'error');
+          this.value = '';
+          resetModalFileDisplay();
+          return;
+        }
+        
+        // Show file info and enable upload button
+        if (fileName) fileName.textContent = file.name;
+        if (fileDisplay) fileDisplay.classList.add('show');
+        if (uploadBtn) uploadBtn.disabled = false;
+        
+        // Start upload simulation for UI feedback
+        simulateModalUpload(file);
+      }
+    });
+  }
+
+  // Close modal when clicking outside
+  const modalOverlay = document.getElementById('resume-upload-modal');
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', function(e) {
+      if (e.target === modalOverlay) {
+        closeResumeModal();
+      }
+    });
+  }
+
+  // Close modal with Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('resume-upload-modal')) {
+      closeResumeModal();
+    }
+  });
+}
+
+// Simulate upload progress for UI feedback
+function simulateModalUpload(file) {
+  const progressBar = document.getElementById('resume-modal-progress');
+  if (!progressBar) return;
+  
+  // Show progress bar
+  progressBar.style.width = '0%';
+  
+  // Simulate upload progress
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 15;
+    
+    if (progress >= 100) {
+      progress = 100;
+      progressBar.style.width = '100%';
+      
+      // Reset progress after completion
+      setTimeout(() => {
+        progressBar.style.width = '0%';
+      }, 500);
+      
+      clearInterval(interval);
+    } else {
+      progressBar.style.width = progress + '%';
+    }
+  }, 200);
+}
+
+// Reset file display in modal
+function resetModalFileDisplay() {
+  const fileDisplay = document.getElementById('resume-modal-file-display');
+  const uploadBtn = document.getElementById('resume-modal-upload');
+  const progressBar = document.getElementById('resume-modal-progress');
+  
+  if (fileDisplay) fileDisplay.classList.remove('show');
+  if (uploadBtn) uploadBtn.disabled = true;
+  if (progressBar) progressBar.style.width = '0%';
+}
+
+// Remove selected file
+function removeSelectedFile() {
+  const fileInput = document.getElementById('resume-modal-input');
+  if (fileInput) fileInput.value = '';
+  resetModalFileDisplay();
+}
+
+// Upload new resume to Cloudinary and update Firebase
+async function uploadNewResume() {
+  const fileInput = document.getElementById('resume-modal-input');
+  const uploadBtn = document.getElementById('resume-modal-upload');
+  
+  if (!fileInput || !fileInput.files[0]) {
+    showNotification('Please select a file first.', 'error');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const originalBtnText = uploadBtn.textContent;
+  
+  try {
+    // Update button state
+    uploadBtn.textContent = 'Uploading...';
+    uploadBtn.disabled = true;
+    
+    // Check if user is logged in
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      throw new Error('You must be logged in to update your resume.');
+    }
+
+    // Upload to Cloudinary
+    const uploadResult = await uploadToCloudinary(file);
+    
+    // Update Firebase document
+    const db = firebase.firestore();
+    const profileData = {
+      resumeURL: uploadResult.url,
+      resumeFileName: file.name,
+      cloudinaryPublicId: uploadResult.publicId,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection("jobseekers").doc(user.uid).set(profileData, { merge: true });
+    
+    showNotification('Resume updated successfully!', 'success');
+    
+    // Close modal after success
+    setTimeout(() => {
+      closeResumeModal();
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Error updating resume:', error);
+    showNotification(`Failed to update resume: ${error.message}`, 'error');
+    
+    // Reset button state
+    uploadBtn.textContent = originalBtnText;
+    uploadBtn.disabled = false;
+  }
+}
+
+// Upload file to Cloudinary (same function from edit-profile-jobseeker.js)
+async function uploadToCloudinary(file) {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_CONFIG.UPLOAD_PRESET);
+    formData.append('resource_type', 'raw');
+    formData.append('folder', 'resumes');
+
+    const xhr = new XMLHttpRequest();
+    
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 200) {
+        const response = JSON.parse(xhr.responseText);
+        resolve({
+          url: response.secure_url,
+          publicId: response.public_id,
+          originalFilename: response.original_filename
+        });
+      } else {
+        reject(new Error(`Upload failed with status: ${xhr.status}`));
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Upload failed'));
+    });
+
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.CLOUD_NAME}/raw/upload`);
+    xhr.send(formData);
+  });
+}
+
+// Close the resume modal
+function closeResumeModal() {
+  const modal = document.getElementById('resume-upload-modal');
+  if (modal) {
+    modal.classList.remove('show');
+    setTimeout(() => {
+      modal.remove();
+    }, 300);
+  }
 }
 
 function handleSetJobAlerts() {
