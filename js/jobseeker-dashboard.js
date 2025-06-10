@@ -91,7 +91,7 @@ const sampleApplications = [
     appliedDate: "2024-01-08",
     status: "accepted"
   }
-];
+];*/
 
 // Firebase integration for user display
 let currentFirebaseUser = null;
@@ -116,7 +116,7 @@ async function loadUserProfile(userId) {
     console.error("Error loading user profile:", error);
     return null;
   }
-}*/
+}
 
 // Function to update user display with Firebase data
 async function updateUserDisplayFromFirebase(user) {
@@ -227,13 +227,17 @@ document.addEventListener('DOMContentLoaded', function() {
   setupEventListeners();
 });
 
+// Updated initializeDashboard function
 function initializeDashboard() {
   console.log("Initializing dashboard for user:", currentFirebaseUser?.email || 'unknown');
   
   // Update statistics
   updateStatistics();
   
-  // If profile data is available, you can customize the dashboard further
+  // Load featured jobs from Firebase instead of sample data
+  loadFeaturedJobs();
+  
+  // If profile data is available, customize the dashboard
   if (userProfileData) {
     customizeDashboardForUser(userProfileData);
   }
@@ -286,40 +290,60 @@ function getCurrentUser() {
 }
 
 function updateStatistics() {
-  // Update application statistics
+  // Remove references to sampleApplications if you want to use Firebase data
+  // For now, keeping sample applications but you can update this too
   document.getElementById('applications-count').textContent = sampleApplications.length;
   document.getElementById('interviews-count').textContent = sampleApplications.filter(app => app.status === 'accepted').length;
-  document.getElementById('saved-jobs-count').textContent = '5'; // This would come from saved jobs data
+  document.getElementById('saved-jobs-count').textContent = '0'; // Update this to fetch from Firebase
 }
 
-function loadFeaturedJobs() {
+async function loadFeaturedJobs() {
   const jobsGrid = document.getElementById('featured-jobs');
   if (!jobsGrid) return;
   
-  jobsGrid.innerHTML = '';
+  jobsGrid.innerHTML = '<p>Loading featured jobs...</p>';
   
-  // Filter jobs based on user skills if available
-  let jobsToShow = sampleJobs;
-  if (userProfileData && userProfileData.skills && userProfileData.skills.length > 0) {
-    // Simple skill-based filtering (in a real app, this would be more sophisticated)
-    const userSkills = userProfileData.skills.map(skill => skill.toLowerCase());
-    jobsToShow = sampleJobs.filter(job => {
-      const jobText = (job.title + ' ' + job.description).toLowerCase();
-      return userSkills.some(skill => jobText.includes(skill));
+  try {
+    const db = firebase.firestore();
+    const snapshot = await db.collection('jobPost').limit(6).get(); // Limit to 6 featured jobs
+    
+    const jobs = [];
+    snapshot.forEach(doc => {
+      jobs.push({ id: doc.id, ...doc.data() });
     });
     
-    // If no matches found, show all jobs
-    if (jobsToShow.length === 0) {
-      jobsToShow = sampleJobs;
+    jobsGrid.innerHTML = '';
+    
+    if (jobs.length === 0) {
+      jobsGrid.innerHTML = '<p style="text-align: center; color: #666;">No jobs available at the moment.</p>';
+      return;
     }
+    
+    // Filter jobs based on user skills if available
+    let jobsToShow = jobs;
+    if (userProfileData && userProfileData.skills && userProfileData.skills.length > 0) {
+      const userSkills = userProfileData.skills.map(skill => skill.toLowerCase());
+      const filteredJobs = jobs.filter(job => {
+        const jobText = (job.jobTitle + ' ' + job.jobDescription).toLowerCase();
+        return userSkills.some(skill => jobText.includes(skill));
+      });
+      
+      // If matches found, use filtered jobs, otherwise show all
+      if (filteredJobs.length > 0) {
+        jobsToShow = filteredJobs;
+      }
+    }
+    
+    jobsToShow.forEach(job => {
+      const jobCard = createJobCard(job);
+      jobsGrid.appendChild(jobCard);
+    });
+    
+  } catch (error) {
+    console.error('Error loading featured jobs:', error);
+    jobsGrid.innerHTML = '<p style="text-align: center; color: #666;">Error loading jobs. Please try again later.</p>';
   }
-  
-  jobsToShow.forEach(job => {
-    const jobCard = createJobCard(job);
-    jobsGrid.appendChild(jobCard);
-  });
 }
-
 /*
 function createJobCard(job) {
   const jobCard = document.createElement('div');
@@ -345,24 +369,34 @@ function createJobCard(job) {
   return jobCard;
 }*/
 
+// Updated createJobCard function to handle Firebase job structure
 function createJobCard(job) {
   const jobCard = document.createElement('div');
   jobCard.className = 'job-card';
+  
+  // Safely get job properties with fallbacks
+  const jobTitle = job.jobTitle || 'Job Title Not Available';
+  const companyName = job.companyName || 'Company Name Not Available';
+  const location = job.location || 'Location Not Specified';
+  const jobType = job.jobType || 'Full-time';
+  const salary = job.salary || 'Salary Not Specified';
+  const description = job.jobDescription || job.description || 'No description available';
+  
   jobCard.innerHTML = `
     <div class="job-header">
       <div>
-        <h3 class="job-title">${job.jobTitle}</h3>
-        <p class="company-name">${job.companyName}</p>
+        <h3 class="job-title">${jobTitle}</h3>
+        <p class="company-name">${companyName}</p>
       </div>
-      <span class="job-salary">${job.salary || ''}</span>
+      <span class="job-salary">${salary}</span>
     </div>
     <div class="job-details">
-      <span class="job-location">${job.location}</span>
-      <span class="job-type">${job.jobType || ''}</span>
+      <span class="job-location">${location}</span>
+      <span class="job-type">${jobType}</span>
     </div>
-    <p class="job-description">${(job.description || '').substring(0, 100)}...</p>
+    <p class="job-description">${description.substring(0, 150)}${description.length > 150 ? '...' : ''}</p>
     <div class="job-actions">
-      <button class="apply-btn" onclick='showJobModal(${JSON.stringify(job).replace(/'/g, "\'").replace(/"/g, '&quot;')})'>View Details</button>
+      <button class="apply-btn" onclick='showJobModal(${JSON.stringify(job).replace(/'/g, "\\'").replace(/"/g, '&quot;')})'>View Details</button>
     </div>
   `;
   return jobCard;
@@ -473,27 +507,29 @@ function setupEventListeners() {
   displayFilteredJobs(filteredJobs);
 }*/
 
+// Updated displayFilteredJobs function
 function displayFilteredJobs(jobs) {
   const jobsGrid = document.getElementById('featured-jobs');
   if (!jobsGrid) return;
-  
+
   jobsGrid.innerHTML = '';
-  
+
   if (jobs.length === 0) {
     jobsGrid.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1 / -1;">No jobs found matching your criteria. Try adjusting your search.</p>';
     return;
   }
-  
+
   jobs.forEach(job => {
-    const jobCard = createJobCard(job);
-    jobsGrid.appendChild(jobCard);
+    const card = createJobCard(job);
+    jobsGrid.appendChild(card);
   });
 }
 
 // Firebase Firestore-based Job Search Function
+// Updated performJobSearch function (keep as is, it's already correct)
 async function performJobSearch() {
   const jobsGrid = document.getElementById('featured-jobs');
-  jobsGrid.innerHTML = '<p>Loading...</p>';
+  jobsGrid.innerHTML = '<p>Searching...</p>';
 
   const searchTerm = document.getElementById('job-search')?.value?.trim().toLowerCase() || '';
   const locationFilter = document.getElementById('location-filter')?.value?.trim().toLowerCase() || '';
@@ -512,11 +548,19 @@ async function performJobSearch() {
       const jobTitle = job.jobTitle?.toLowerCase() || '';
       const location = job.location?.toLowerCase() || '';
       const company = job.companyName?.toLowerCase() || '';
-      const description = job.description?.toLowerCase() || '';
+      const description = (job.jobDescription || job.description || '').toLowerCase();
 
-      const matchesSearchTerm = !searchTerm || jobTitle.includes(searchTerm) || description.includes(searchTerm) || company.includes(searchTerm);
-      const matchesLocation = !locationFilter || locationFilter === 'all locations' || location.includes(locationFilter);
-      const matchesCategory = !categoryFilter || jobTitle.includes(categoryFilter);
+      const matchesSearchTerm = !searchTerm || 
+        jobTitle.includes(searchTerm) || 
+        description.includes(searchTerm) || 
+        company.includes(searchTerm);
+      
+      const matchesLocation = !locationFilter || 
+        locationFilter === 'all locations' || 
+        location.includes(locationFilter);
+      
+      const matchesCategory = !categoryFilter || 
+        jobTitle.includes(categoryFilter);
 
       if (matchesSearchTerm && matchesLocation && matchesCategory) {
         results.push({ id: jobId, ...job });
@@ -526,7 +570,7 @@ async function performJobSearch() {
     displayFilteredJobs(results);
   } catch (error) {
     console.error('Error fetching jobs:', error);
-    jobsGrid.innerHTML = '<p>Error loading jobs. Try again later.</p>';
+    jobsGrid.innerHTML = '<p style="text-align: center; color: #666;">Error loading jobs. Please try again later.</p>';
   }
 }
 
@@ -1042,13 +1086,15 @@ function showJobModal(job) {
     <div class="job-modal-overlay" onclick="this.remove()">
       <div class="job-modal" onclick="event.stopPropagation()">
         <button class="close-modal" onclick="document.querySelector('.job-modal-overlay').remove()">×</button>
-        <h2>${job.jobTitle}</h2>
-        <p><strong>Company:</strong> ${job.companyName}</p>
-        <p><strong>Location:</strong> ${job.location}</p>
-        <p><strong>Type:</strong> ${job.jobType || 'N/A'}</p>
+        <h2>${job.jobTitle || 'Job Title Not Available'}</h2>
+        <p><strong>Company:</strong> ${job.companyName || 'Not specified'}</p>
+        <p><strong>Location:</strong> ${job.location || 'Not specified'}</p>
+        <p><strong>Type:</strong> ${job.jobType || 'Not specified'}</p>
         <p><strong>Salary:</strong> ${job.salary || 'Not specified'}</p>
-        <p><strong>Description:</strong><br>${job.jobDescription}</p>
-        <button class="apply-btn" onclick="applyToJobModal('${job.id}', '${job.jobTitle}', '${job.companyName}')">Apply for Job</button>
+        <p><strong>Description:</strong><br>${job.jobDescription || job.description || 'No description available'}</p>
+        <div style="margin-top: 20px;">
+          <button class="apply-btn" onclick="applyToJobModal('${job.id}', '${job.jobTitle}', '${job.companyName}')">Apply for Job</button>
+        </div>
       </div>
     </div>
   `;
