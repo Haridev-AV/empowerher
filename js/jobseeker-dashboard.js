@@ -26,7 +26,7 @@ document.addEventListener('click', (e) => {
 });
 
 // Sample data for demonstration
-/*const sampleJobs = [
+const sampleJobs = [
   {
     id: 1,
     title: "Senior Frontend Developer",
@@ -91,7 +91,7 @@ const sampleApplications = [
     appliedDate: "2024-01-08",
     status: "accepted"
   }
-];*/
+];
 
 // Firebase integration for user display
 let currentFirebaseUser = null;
@@ -202,7 +202,6 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
       
       // Initialize dashboard after user data is loaded
       initializeDashboard();
-      setupEventListeners();
     } else {
       console.log("No user logged in");
       // Redirect to login if needed
@@ -472,7 +471,7 @@ function setupEventListeners() {
   if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 }
 
-/*function performJobSearch() {
+function performJobSearch() {
   const searchTerm = document.getElementById('job-search')?.value?.toLowerCase() || '';
   const location = document.getElementById('location-filter')?.value || '';
   const category = document.getElementById('category-filter')?.value || '';
@@ -505,7 +504,7 @@ function setupEventListeners() {
   
   // Update the jobs display
   displayFilteredJobs(filteredJobs);
-}*/
+}
 
 // Updated displayFilteredJobs function
 function displayFilteredJobs(jobs) {
