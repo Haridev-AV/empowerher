@@ -26,7 +26,7 @@ document.addEventListener('click', (e) => {
 });
 
 // Sample data for demonstration
-const sampleJobs = [
+/*const sampleJobs = [
   {
     id: 1,
     title: "Senior Frontend Developer",
@@ -116,7 +116,7 @@ async function loadUserProfile(userId) {
     console.error("Error loading user profile:", error);
     return null;
   }
-}
+}*/
 
 // Function to update user display with Firebase data
 async function updateUserDisplayFromFirebase(user) {
@@ -202,6 +202,7 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
       
       // Initialize dashboard after user data is loaded
       initializeDashboard();
+      setupEventListeners();
     } else {
       console.log("No user logged in");
       // Redirect to login if needed
@@ -319,6 +320,7 @@ function loadFeaturedJobs() {
   });
 }
 
+/*
 function createJobCard(job) {
   const jobCard = document.createElement('div');
   jobCard.className = 'job-card';
@@ -338,6 +340,29 @@ function createJobCard(job) {
     <div class="job-actions">
       <button class="apply-btn" onclick="applyToJob(${job.id})">Apply Now</button>
       <button class="save-btn" onclick="saveJob(${job.id})">Save Job</button>
+    </div>
+  `;
+  return jobCard;
+}*/
+
+function createJobCard(job) {
+  const jobCard = document.createElement('div');
+  jobCard.className = 'job-card';
+  jobCard.innerHTML = `
+    <div class="job-header">
+      <div>
+        <h3 class="job-title">${job.jobTitle}</h3>
+        <p class="company-name">${job.companyName}</p>
+      </div>
+      <span class="job-salary">${job.salary || ''}</span>
+    </div>
+    <div class="job-details">
+      <span class="job-location">${job.location}</span>
+      <span class="job-type">${job.jobType || ''}</span>
+    </div>
+    <p class="job-description">${(job.description || '').substring(0, 100)}...</p>
+    <div class="job-actions">
+      <button class="apply-btn" onclick='showJobModal(${JSON.stringify(job).replace(/'/g, "\'").replace(/"/g, '&quot;')})'>View Details</button>
     </div>
   `;
   return jobCard;
@@ -413,7 +438,7 @@ function setupEventListeners() {
   if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 }
 
-function performJobSearch() {
+/*function performJobSearch() {
   const searchTerm = document.getElementById('job-search')?.value?.toLowerCase() || '';
   const location = document.getElementById('location-filter')?.value || '';
   const category = document.getElementById('category-filter')?.value || '';
@@ -446,7 +471,7 @@ function performJobSearch() {
   
   // Update the jobs display
   displayFilteredJobs(filteredJobs);
-}
+}*/
 
 function displayFilteredJobs(jobs) {
   const jobsGrid = document.getElementById('featured-jobs');
@@ -462,6 +487,63 @@ function displayFilteredJobs(jobs) {
   jobs.forEach(job => {
     const jobCard = createJobCard(job);
     jobsGrid.appendChild(jobCard);
+  });
+}
+
+// Firebase Firestore-based Job Search Function
+async function performJobSearch() {
+  const jobsGrid = document.getElementById('featured-jobs');
+  jobsGrid.innerHTML = '<p>Loading...</p>';
+
+  const searchTerm = document.getElementById('job-search')?.value?.trim().toLowerCase() || '';
+  const locationFilter = document.getElementById('location-filter')?.value?.trim().toLowerCase() || '';
+  const categoryFilter = document.getElementById('category-filter')?.value?.trim().toLowerCase() || '';
+
+  try {
+    const db = firebase.firestore();
+    const snapshot = await db.collection('jobPost').get();
+
+    const results = [];
+
+    snapshot.forEach(doc => {
+      const job = doc.data();
+      const jobId = doc.id;
+
+      const jobTitle = job.jobTitle?.toLowerCase() || '';
+      const location = job.location?.toLowerCase() || '';
+      const company = job.companyName?.toLowerCase() || '';
+      const description = job.description?.toLowerCase() || '';
+
+      const matchesSearchTerm = !searchTerm || jobTitle.includes(searchTerm) || description.includes(searchTerm) || company.includes(searchTerm);
+      const matchesLocation = !locationFilter || locationFilter === 'all locations' || location.includes(locationFilter);
+      const matchesCategory = !categoryFilter || jobTitle.includes(categoryFilter);
+
+      if (matchesSearchTerm && matchesLocation && matchesCategory) {
+        results.push({ id: jobId, ...job });
+      }
+    });
+
+    displayFilteredJobs(results);
+  } catch (error) {
+    console.error('Error fetching jobs:', error);
+    jobsGrid.innerHTML = '<p>Error loading jobs. Try again later.</p>';
+  }
+}
+
+function displayFilteredJobs(jobs) {
+  const jobsGrid = document.getElementById('featured-jobs');
+  if (!jobsGrid) return;
+
+  jobsGrid.innerHTML = '';
+
+  if (jobs.length === 0) {
+    jobsGrid.innerHTML = '<p style="text-align:center; color:#666;">No jobs found matching your criteria.</p>';
+    return;
+  }
+
+  jobs.forEach(job => {
+    const card = createJobCard(job);
+    jobsGrid.appendChild(card);
   });
 }
 
@@ -912,3 +994,85 @@ setInterval(() => {
   // In a real application, you would fetch fresh data from your API
   console.log('Auto-refreshing dashboard data...');
 }, 300000); // 5 minutes
+/*
+function showJobModal(job) {
+  const modalHTML = `
+    <div class="job-modal-overlay" onclick="this.remove()">
+      <div class="job-modal" onclick="event.stopPropagation()">
+        <button class="close-modal" onclick="document.querySelector('.job-modal-overlay').remove()">×</button>
+        <h2>${job.jobTitle}</h2>
+        <p><strong>Company:</strong> ${job.companyName}</p>
+        <p><strong>Location:</strong> ${job.location}</p>
+        <p><strong>Type:</strong> ${job.jobType || 'N/A'}</p>
+        <p><strong>Salary:</strong> ${job.salary || 'Not specified'}</p>
+        <p><strong>Description:</strong><br>${job.description}</p>
+        <div style="margin-top: 20px;">
+          <button class="apply-btn" onclick="applyToJobModal('${job.id}', '${job.jobTitle}', '${job.companyName}')">Apply for Job</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function applyToJobModal(jobId, title, company) {
+  if (!userProfileData || !userProfileData.profileComplete) {
+    showNotification('Please complete your profile before applying!', 'warning');
+    return;
+  }
+
+  const newApplication = {
+    id: sampleApplications.length + 1,
+    jobTitle: title,
+    company: company,
+    appliedDate: new Date().toISOString().split('T')[0],
+    status: 'pending'
+  };
+
+  sampleApplications.unshift(newApplication);
+  loadRecentApplications();
+  updateStatistics();
+  showNotification(`Applied to ${title} at ${company}`, 'success');
+  document.querySelector('.job-modal-overlay')?.remove();
+}
+*/
+
+function showJobModal(job) {
+  const modalHTML = `
+    <div class="job-modal-overlay" onclick="this.remove()">
+      <div class="job-modal" onclick="event.stopPropagation()">
+        <button class="close-modal" onclick="document.querySelector('.job-modal-overlay').remove()">×</button>
+        <h2>${job.jobTitle}</h2>
+        <p><strong>Company:</strong> ${job.companyName}</p>
+        <p><strong>Location:</strong> ${job.location}</p>
+        <p><strong>Type:</strong> ${job.jobType || 'N/A'}</p>
+        <p><strong>Salary:</strong> ${job.salary || 'Not specified'}</p>
+        <p><strong>Description:</strong><br>${job.jobDescription}</p>
+        <button class="apply-btn" onclick="applyToJobModal('${job.id}', '${job.jobTitle}', '${job.companyName}')">Apply for Job</button>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function applyToJobModal(jobId, title, company) {
+  if (!userProfileData || !userProfileData.profileComplete) {
+    showNotification('Please complete your profile before applying!', 'warning');
+    return;
+  }
+
+  const newApplication = {
+    id: sampleApplications.length + 1,
+    jobTitle: title,
+    company: company,
+    appliedDate: new Date().toISOString().split('T')[0],
+    status: 'pending'
+  };
+
+  sampleApplications.unshift(newApplication);
+  loadRecentApplications();
+  updateStatistics();
+  showNotification(`Applied to ${title} at ${company}`, 'success');
+  document.querySelector('.job-modal-overlay')?.remove();
+}
+
