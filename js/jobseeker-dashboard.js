@@ -296,6 +296,7 @@ function updateStatistics() {
   document.getElementById('saved-jobs-count').textContent = '0'; // Update this to fetch from Firebase
 }
 
+// Updated loadFeaturedJobs function
 async function loadFeaturedJobs() {
   const jobsGrid = document.getElementById('featured-jobs');
   if (!jobsGrid) return;
@@ -304,7 +305,7 @@ async function loadFeaturedJobs() {
   
   try {
     const db = firebase.firestore();
-    const snapshot = await db.collection('jobPost').limit(6).get(); // Limit to 6 featured jobs
+    const snapshot = await db.collection('jobPost').limit(6).get();
     
     const jobs = [];
     snapshot.forEach(doc => {
@@ -327,14 +328,15 @@ async function loadFeaturedJobs() {
         return userSkills.some(skill => jobText.includes(skill));
       });
       
-      // If matches found, use filtered jobs, otherwise show all
       if (filteredJobs.length > 0) {
         jobsToShow = filteredJobs;
       }
     }
     
-    jobsToShow.forEach(job => {
-      const jobCard = createJobCard(job);
+    // Clear currentJobs array and populate with new jobs
+    currentJobs = [];
+    jobsToShow.forEach((job, index) => {
+      const jobCard = createJobCard(job, index);
       jobsGrid.appendChild(jobCard);
     });
     
@@ -368,10 +370,16 @@ function createJobCard(job) {
   return jobCard;
 }*/
 
-// Updated createJobCard function to handle Firebase job structure
-function createJobCard(job) {
+let currentJobs = [];
+
+
+// Updated createJobCard function - store job in global array and pass index
+function createJobCard(job, index) {
   const jobCard = document.createElement('div');
   jobCard.className = 'job-card';
+  
+  // Store job in global array for modal access
+  currentJobs[index] = job;
   
   // Safely get job properties with fallbacks
   const jobTitle = job.jobTitle || 'Job Title Not Available';
@@ -395,7 +403,7 @@ function createJobCard(job) {
     </div>
     <p class="job-description">${description.substring(0, 150)}${description.length > 150 ? '...' : ''}</p>
     <div class="job-actions">
-      <button class="apply-btn" onclick='showJobModal(${JSON.stringify(job).replace(/'/g, "\\'").replace(/"/g, '&quot;')})'>View Details</button>
+      <button class="apply-btn" onclick="showJobModal(${index})">View Details</button>
     </div>
   `;
   return jobCard;
@@ -517,7 +525,7 @@ function displayFilteredJobs(jobs) {
     jobsGrid.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1 / -1;">No jobs found matching your criteria. Try adjusting your search.</p>';
     return;
   }
-
+  currentJobs = [];
   jobs.forEach(job => {
     const card = createJobCard(job);
     jobsGrid.appendChild(card);
@@ -1080,7 +1088,16 @@ function applyToJobModal(jobId, title, company) {
 }
 */
 
-function showJobModal(job) {
+// Updated showJobModal function - now takes index instead of job object
+function showJobModal(jobIndex) {
+  const job = currentJobs[jobIndex];
+  
+  if (!job) {
+    console.error('Job not found at index:', jobIndex);
+    showNotification('Error loading job details', 'error');
+    return;
+  }
+  
   const modalHTML = `
     <div class="job-modal-overlay" onclick="this.remove()">
       <div class="job-modal" onclick="event.stopPropagation()">
@@ -1099,6 +1116,7 @@ function showJobModal(job) {
   `;
   document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
+
 
 function applyToJobModal(jobId, title, company) {
   if (!userProfileData || !userProfileData.profileComplete) {
