@@ -340,9 +340,9 @@ function loadApplications(userId) {
   applicationsContainer.innerHTML = "<p>Loading applications...</p>";
   
   firebase.firestore()
-    .collection("applications")
+    .collection("applicant-post")
     .where("recruiterId", "==", userId)
-    .orderBy("appliedAt", "desc")
+    .orderBy("applicationDate", "desc")
     .limit(4)
     .get()
     .then((querySnapshot) => {
@@ -360,24 +360,50 @@ function loadApplications(userId) {
 
         // Handle Firestore timestamps properly
         let appliedAtDisplay = "Unknown date";
-        if (application.appliedAt) {
-          if (application.appliedAt.toDate && typeof application.appliedAt.toDate === "function") {
-            appliedAtDisplay = formatDate(application.appliedAt.toDate());
-          } else if (application.appliedAt instanceof Date) {
-            appliedAtDisplay = formatDate(application.appliedAt);
+        if (application.applicationDate) {
+          if (application.applicationDate.toDate && typeof application.applicationDate.toDate === "function") {
+            appliedAtDisplay = formatDate(application.applicationDate.toDate());
+          } else if (application.applicationDate instanceof Date) {
+            appliedAtDisplay = formatDate(application.applicationDate);
           }
+        }
+
+        // Get applicant name from applicantDetails
+        const applicantName = application.applicantDetails ? 
+          `${application.applicantDetails.firstName || ''} ${application.applicantDetails.lastName || ''}`.trim() : 
+          'Unknown Candidate';
+
+        // Get job title from jobDetails
+        const jobTitle = application.jobDetails ? 
+          application.jobDetails.jobTitle || 'Unknown Position' : 
+          'Unknown Position';
+
+        // Determine which action buttons to show based on status
+        let actionButtons = '';
+        if (application.status === 'pending') {
+          actionButtons = `
+            <button class="review" onclick="reviewApplication('${application.id}')">
+              <i class="fas fa-check-circle"></i> Review Application
+            </button>
+          `;
+        } else {
+          actionButtons = `
+            <button class="view" onclick="reviewApplication('${application.id}')">
+              <i class="fas fa-eye"></i> View Details
+            </button>
+          `;
         }
 
         applicationsHTML += `
           <div class="job-card">
-            <h3>${application.candidateName || "Unknown Candidate"}</h3>
-            <p>Applied for: ${application.jobTitle || "Unknown Position"}</p>
+            <h3>${applicantName}</h3>
+            <p>Applied for: ${jobTitle}</p>
             <div class="job-meta">
-              <span>${application.status || "New"}</span>
+              <span class="status-${application.status || 'pending'}">${application.status || 'New'}</span>
               <span>${appliedAtDisplay}</span>
             </div>
             <div class="job-actions">
-              <button class="edit" onclick="viewApplication('${application.id}')">View</button>
+              ${actionButtons}
             </div>
           </div>
         `;
@@ -427,9 +453,9 @@ function loadAnalytics(userId) {
       console.error("Error getting jobs count:", error);
     });
 
-  // Get total applications
+  // Get total applications from applicant-post collection
   firebase.firestore()
-    .collection("applications")
+    .collection("applicant-post")
     .where("recruiterId", "==", userId)
     .get()
     .then((snapshot) => {
@@ -440,11 +466,11 @@ function loadAnalytics(userId) {
       console.error("Error getting applications count:", error);
     });
 
-  // Get active interviews
+  // Get active interviews (applications with interview_scheduled status)
   firebase.firestore()
-    .collection("applications")
+    .collection("applicant-post")
     .where("recruiterId", "==", userId)
-    .where("status", "==", "Interview")
+    .where("status", "==", "interview_scheduled")
     .get()
     .then((snapshot) => {
       console.log(`Active interviews count: ${snapshot.size}`);
@@ -454,11 +480,11 @@ function loadAnalytics(userId) {
       console.error("Error getting interviews count:", error);
     });
 
-  // Get positions filled
+  // Get positions filled (applications with accepted status)
   firebase.firestore()
-    .collection("applications")
+    .collection("applicant-post")
     .where("recruiterId", "==", userId)
-    .where("status", "==", "Hired")
+    .where("status", "==", "accepted")
     .get()
     .then((snapshot) => {
       console.log(`Positions filled count: ${snapshot.size}`);
@@ -570,9 +596,8 @@ function loadDemoData() {
 
 // Helper function to format dates
 function formatDate(date) {
-  if (!(date instanceof Date)) {
-    console.warn("formatDate received non-Date object:", date);
-    return "Invalid date";
+  if (!date || !(date instanceof Date) || isNaN(date)) {
+    return '';
   }
 
   const options = { year: "numeric", month: "short", day: "numeric" };
@@ -637,4 +662,380 @@ function logout() {
     alert("You would be logged out (Demo Mode)");
     window.location.href = "index.html";
   }
+}
+
+// Add function to handle application review
+function reviewApplication(applicationId) {
+  console.log("reviewApplication called with applicationId:", applicationId);
+  
+  // Get application details from Firestore
+  firebase.firestore()
+    .collection("applicant-post")
+    .doc(applicationId)
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        showNotification('Application not found', 'error');
+        return;
+      }
+
+      const application = doc.data();
+      const applicantDetails = application.applicantDetails || {};
+      const jobDetails = application.jobDetails || {};
+      
+      // Create modal HTML
+      const modalHTML = `
+        <div class="review-modal-overlay" onclick="closeReviewModal()">
+          <div class="review-modal" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeReviewModal()">×</button>
+            
+            <div class="review-header">
+              <h2>Review Application</h2>
+              <span class="status-badge status-${application.status}">${application.status}</span>
+            </div>
+
+            <div class="review-content">
+              <div class="review-section">
+                <h3>Applicant Details</h3>
+                <div class="details-grid">
+                  <div class="detail-item">
+                    <label>Name:</label>
+                    <span>${applicantDetails.firstName} ${applicantDetails.lastName}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Email:</label>
+                    <span>${applicantDetails.email}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Phone:</label>
+                    <span>${applicantDetails.contactNumber || 'Not provided'}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Location:</label>
+                    <span>${applicantDetails.homeAddress || 'Not provided'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="review-section">
+                <h3>Job Details</h3>
+                <div class="details-grid">
+                  <div class="detail-item">
+                    <label>Position:</label>
+                    <span>${jobDetails.jobTitle}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Department:</label>
+                    <span>${jobDetails.department || 'Not specified'}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Location:</label>
+                    <span>${jobDetails.location}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Type:</label>
+                    <span>${jobDetails.jobType}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="review-section">
+                <h3>Resume</h3>
+                ${applicantDetails.resumeURL ? 
+                  `<a href="${applicantDetails.resumeURL}" target="_blank" class="resume-download-btn" download="${applicantDetails.resumeFileName || 'resume.pdf'}">
+                    <i class="fas fa-download"></i> Download Resume
+                  </a>` : 
+                  '<p>No resume uploaded</p>'
+                }
+              </div>
+
+              <div class="review-section">
+                <h3>Application Status</h3>
+                <div class="status-history">
+                  ${application.statusHistory ? 
+                    application.statusHistory.map(status => `
+                      <div class="status-item">
+                        <span class="status-badge status-${status.status}">${status.status}</span>
+                        <span class="status-date">${formatDate(status.timestamp)}</span>
+                        ${status.notes ? `<p class="status-notes">${status.notes}</p>` : ''}
+                      </div>
+                    `).join('') : 
+                    '<p>No status history available</p>'
+                  }
+                </div>
+              </div>
+
+              <div class="review-actions">
+                <button class="action-btn accept" onclick="updateApplicationStatus('${applicationId}', 'accepted')">
+                  <i class="fas fa-check"></i> Accept
+                </button>
+                <button class="action-btn reject" onclick="updateApplicationStatus('${applicationId}', 'rejected')">
+                  <i class="fas fa-times"></i> Reject
+                </button>
+                <button class="action-btn interview" onclick="scheduleInterview('${applicationId}')">
+                  <i class="fas fa-calendar"></i> Schedule Interview
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Add modal to page
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+      // Add styles
+      const style = document.createElement('style');
+      style.textContent = `
+        .review-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .review-modal {
+          background: white;
+          border-radius: 8px;
+          padding: 20px;
+          width: 90%;
+          max-width: 800px;
+          max-height: 90vh;
+          overflow-y: auto;
+          position: relative;
+        }
+
+        .close-modal {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: none;
+          border: none;
+          font-size: 24px;
+          cursor: pointer;
+          color: #666;
+        }
+
+        .review-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #eee;
+        }
+
+        .review-section {
+          margin-bottom: 20px;
+          padding: 15px;
+          background: #f8f9fa;
+          border-radius: 6px;
+        }
+
+        .details-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+        }
+
+        .detail-item {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .detail-item label {
+          font-weight: 600;
+          color: #666;
+          margin-bottom: 5px;
+        }
+
+        .resume-download-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 20px;
+          background: #007bff;
+          color: white;
+          text-decoration: none;
+          border-radius: 5px;
+          transition: background 0.2s;
+        }
+
+        .resume-download-btn:hover {
+          background: #0056b3;
+        }
+
+        .status-history {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .status-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px;
+          background: white;
+          border-radius: 4px;
+        }
+
+        .status-badge {
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 0.9em;
+          font-weight: 500;
+        }
+
+        .status-pending { background: #ffd700; color: #000; }
+        .status-accepted { background: #28a745; color: white; }
+        .status-rejected { background: #dc3545; color: white; }
+        .status-interview_scheduled { background: #17a2b8; color: white; }
+
+        .review-actions {
+          display: flex;
+          gap: 10px;
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+        }
+
+        .action-btn {
+          flex: 1;
+          padding: 12px;
+          border: none;
+          border-radius: 5px;
+          color: white;
+          font-weight: 500;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: opacity 0.2s;
+        }
+
+        .action-btn:hover {
+          opacity: 0.9;
+        }
+
+        .action-btn.accept { background: #28a745; }
+        .action-btn.reject { background: #dc3545; }
+        .action-btn.interview { background: #17a2b8; }
+      `;
+      document.head.appendChild(style);
+
+    })
+    .catch((error) => {
+      console.error("Error loading application:", error);
+      showNotification('Error loading application details', 'error');
+    });
+}
+
+function closeReviewModal() {
+  const modal = document.querySelector('.review-modal-overlay');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function updateApplicationStatus(applicationId, newStatus) {
+  if (!confirm(`Are you sure you want to ${newStatus} this application?`)) {
+    return;
+  }
+
+  const timestamp = new Date();
+  const formattedDate = formatDate(timestamp);
+
+  firebase.firestore()
+    .collection("applicant-post")
+    .doc(applicationId)
+    .update({
+      status: newStatus,
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+      statusHistory: firebase.firestore.FieldValue.arrayUnion({
+        status: newStatus,
+        timestamp: timestamp,
+        notes: `Application ${newStatus} by recruiter on ${formattedDate}`
+      })
+    })
+    .then(() => {
+      showNotification(`Application ${newStatus} successfully on ${formattedDate}`, 'success');
+      closeReviewModal();
+      loadApplications(currentUserId);
+    });
+}
+
+function scheduleInterview(applicationId) {
+  const template = document.getElementById('interview-modal-template');
+  const modalContent = template.content.cloneNode(true);
+  
+  // Set minimum date to today
+  const dateInput = modalContent.getElementById('interview-date');
+  dateInput.min = new Date().toISOString().split('T')[0];
+  
+  // Add event listeners
+  const closeBtn = modalContent.querySelector('.close-modal');
+  const cancelBtn = modalContent.querySelector('.btn-secondary');
+  const scheduleBtn = modalContent.querySelector('.btn-primary');
+  
+  closeBtn.onclick = () => closeInterviewModal();
+  cancelBtn.onclick = () => closeInterviewModal();
+  scheduleBtn.onclick = () => confirmInterviewSchedule(applicationId);
+  
+  document.body.appendChild(modalContent);
+}
+
+function closeInterviewModal() {
+  const modal = document.querySelector('.interview-modal-overlay');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function confirmInterviewSchedule(applicationId) {
+  const date = document.getElementById('interview-date').value;
+  const time = document.getElementById('interview-time').value;
+  const type = document.getElementById('interview-type').value;
+  const notes = document.getElementById('interview-notes').value;
+
+  if (!date || !time) {
+    showNotification('Please select both date and time', 'error');
+    return;
+  }
+
+  const interviewDateTime = new Date(`${date}T${time}`);
+  const formattedDateTime = formatDate(interviewDateTime);
+
+  firebase.firestore()
+    .collection("applicant-post")
+    .doc(applicationId)
+    .update({
+      status: 'interview_scheduled',
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+      interviewDetails: {
+        date: date,
+        time: time,
+        type: type,
+        notes: notes,
+        scheduledAt: new Date()
+      },
+      statusHistory: firebase.firestore.FieldValue.arrayUnion({
+        status: 'interview_scheduled',
+        timestamp: new Date(),
+        notes: `Interview scheduled for ${formattedDateTime} (${type})${notes ? ` - ${notes}` : ''}`
+      })
+    })
+    .then(() => {
+      showNotification(`Interview scheduled for ${formattedDateTime}`, 'success');
+      closeInterviewModal();
+      closeReviewModal();
+      loadApplications(currentUserId);
+    });
 }

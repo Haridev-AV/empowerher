@@ -495,6 +495,31 @@ nav ul li a:hover {
   color: #721c24;
 }
 
+.status-interview_scheduled {
+  background: #e2e3f5;
+  color: #383d41;
+}
+
+.interview-details {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #666;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.interview-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.interview-detail-item i {
+  font-size: 14px;
+  color: #2c64fc;
+}
+
 /* Quick Actions Section */
 .quick-actions-section {
   margin-bottom: 30px;
@@ -1023,4 +1048,130 @@ nav ul li a:hover {
 
 .job-modal .apply-btn:hover {
   background: #0056b3;
+}
+
+/* Interview Modal Styles */
+.interview-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.interview-modal {
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+}
+
+.interview-form {
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 0.9rem;
+}
+
+.form-control:focus {
+  border-color: #2c64fc;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(44, 100, 252, 0.1);
+}
+
+.interview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #b927fc 0%, #2c64fc 100%);
+  color: white;
+}
+
+.btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 100, 252, 0.2);
+}
+
+.btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.close-modal {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.close-modal:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+/* Responsive adjustments for interview modal */
+@media (max-width: 600px) {
+  .interview-modal {
+    width: 95%;
+    padding: 20px;
+  }
+  
+  .interview-actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+  }
 }

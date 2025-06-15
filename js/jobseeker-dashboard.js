@@ -69,29 +69,8 @@ const sampleJobs = [
   }
 ];
 
-const sampleApplications = [
-  {
-    id: 1,
-    jobTitle: "Frontend Developer",
-    company: "StartupXYZ",
-    appliedDate: "2024-01-15",
-    status: "reviewing"
-  },
-  {
-    id: 2,
-    jobTitle: "Product Manager",
-    company: "BigTech Corp",
-    appliedDate: "2024-01-10",
-    status: "pending"
-  },
-  {
-    id: 3,
-    jobTitle: "Marketing Specialist",
-    company: "Creative Agency",
-    appliedDate: "2024-01-08",
-    status: "accepted"
-  }
-];
+const sampleApplications = [];
+let appliedJobIds = [];
 
 // Firebase integration for user display
 let currentFirebaseUser = null;
@@ -226,19 +205,27 @@ document.addEventListener('DOMContentLoaded', function() {
   setupEventListeners();
 });
 
-// Updated initializeDashboard function
-function initializeDashboard() {
+// Modify your existing initializeDashboard function
+async function initializeDashboard() {
   console.log("Initializing dashboard for user:", currentFirebaseUser?.email || 'unknown');
   
-  // Update statistics
-  updateStatistics();
-  
-  // Load featured jobs from Firebase instead of sample data
-  loadFeaturedJobs();
-  
-  // If profile data is available, customize the dashboard
-  if (userProfileData) {
-    customizeDashboardForUser(userProfileData);
+  try {
+    // Load applications from Firebase first
+    await loadApplicationsFromFirebase();
+    
+    // Update statistics
+    updateStatistics();
+    
+    // Load featured jobs
+    loadFeaturedJobs();
+    
+    // If profile data is available, customize the dashboard
+    if (userProfileData) {
+      customizeDashboardForUser(userProfileData);
+    }
+  } catch (error) {
+    console.error('Error initializing dashboard:', error);
+    showNotification('Error loading dashboard data. Please refresh the page.', 'error');
   }
 }
 
@@ -345,35 +332,10 @@ async function loadFeaturedJobs() {
     jobsGrid.innerHTML = '<p style="text-align: center; color: #666;">Error loading jobs. Please try again later.</p>';
   }
 }
-/*
-function createJobCard(job) {
-  const jobCard = document.createElement('div');
-  jobCard.className = 'job-card';
-  jobCard.innerHTML = `
-    <div class="job-header">
-      <div>
-        <h3 class="job-title">${job.title}</h3>
-        <p class="company-name">${job.company}</p>
-      </div>
-      <span class="job-salary">${job.salary}</span>
-    </div>
-    <div class="job-details">
-      <span class="job-location">${job.location}</span>
-      <span class="job-type">${job.type}</span>
-    </div>
-    <p class="job-description">${job.description}</p>
-    <div class="job-actions">
-      <button class="apply-btn" onclick="applyToJob(${job.id})">Apply Now</button>
-      <button class="save-btn" onclick="saveJob(${job.id})">Save Job</button>
-    </div>
-  `;
-  return jobCard;
-}*/
 
 let currentJobs = [];
 
-
-// Updated createJobCard function - store job in global array and pass index
+// Updated createJobCard function to show application status
 function createJobCard(job, index) {
   const jobCard = document.createElement('div');
   jobCard.className = 'job-card';
@@ -389,6 +351,11 @@ function createJobCard(job, index) {
   const salary = job.salary || 'Salary Not Specified';
   const description = job.jobDescription || job.description || 'No description available';
   
+  // Find application status if exists
+  const application = sampleApplications.find(app => app.jobId === job.id);
+  const hasApplied = application && application.status !== 'withdrawn';
+  const isWithdrawn = application && application.status === 'withdrawn';
+  
   jobCard.innerHTML = `
     <div class="job-header">
       <div>
@@ -400,6 +367,8 @@ function createJobCard(job, index) {
     <div class="job-details">
       <span class="job-location">${location}</span>
       <span class="job-type">${jobType}</span>
+      ${hasApplied ? '<span class="applied-badge" style="color: #28a745; font-weight: bold;">✓ Applied</span>' : ''}
+      ${isWithdrawn ? '<span class="withdrawn-badge" style="color: #dc3545; font-weight: bold;">Withdrawn</span>' : ''}
     </div>
     <p class="job-description">${description.substring(0, 150)}${description.length > 150 ? '...' : ''}</p>
     <div class="job-actions">
@@ -409,6 +378,7 @@ function createJobCard(job, index) {
   return jobCard;
 }
 
+// Updated loadRecentApplications function
 function loadRecentApplications() {
   const applicationsList = document.getElementById('recent-applications');
   if (!applicationsList) return;
@@ -431,12 +401,44 @@ function createApplicationItem(application) {
   applicationItem.className = 'application-item';
   
   const statusClass = `status-${application.status}`;
-  const statusText = application.status.charAt(0).toUpperCase() + application.status.slice(1);
+  const statusText = application.status.split('_').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+  
+  let interviewDetailsHTML = '';
+  if (application.status === 'interview_scheduled' && application.interviewDetails) {
+    const { date, time, type } = application.interviewDetails;
+    const interviewDate = new Date(`${date}T${time}`);
+    const formattedDate = formatDate(interviewDate);
+    const formattedTime = interviewDate.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    
+    interviewDetailsHTML = `
+      <div class="interview-details">
+        <div class="interview-detail-item">
+          <i class="fas fa-calendar"></i>
+          <span>${formattedDate}</span>
+        </div>
+        <div class="interview-detail-item">
+          <i class="fas fa-clock"></i>
+          <span>${formattedTime}</span>
+        </div>
+        <div class="interview-detail-item">
+          <i class="fas fa-video"></i>
+          <span>${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+        </div>
+      </div>
+    `;
+  }
   
   applicationItem.innerHTML = `
     <div class="application-info">
       <h4>${application.jobTitle}</h4>
       <p>${application.company} • Applied on ${formatDate(application.appliedDate)}</p>
+      ${interviewDetailsHTML}
     </div>
     <span class="application-status ${statusClass}">${statusText}</span>
   `;
@@ -621,6 +623,7 @@ function setupQuickActionListeners() {
   });
 }
 
+// Update the application functions to save to storage
 function applyToJob(jobId) {
   // Check if profile is complete before allowing application
   if (!userProfileData || !userProfileData.profileComplete) {
@@ -631,12 +634,22 @@ function applyToJob(jobId) {
     return;
   }
   
+  // Check if user has already applied to this job
+  if (appliedJobIds.includes(jobId)) {
+    showNotification('You have already applied to this job!', 'warning');
+    return;
+  }
+  
   // In a real application, this would send the application to your backend
   const job = sampleJobs.find(j => j.id === jobId);
   if (job) {
-    // Add to applications (simulate)
+    // Add to applied jobs tracking
+    appliedJobIds.push(jobId);
+    
+    // Add to applications
     const newApplication = {
       id: sampleApplications.length + 1,
+      jobId: jobId,
       jobTitle: job.title,
       company: job.company,
       appliedDate: new Date().toISOString().split('T')[0],
@@ -644,6 +657,9 @@ function applyToJob(jobId) {
     };
     
     sampleApplications.unshift(newApplication);
+    
+    // Save to storage
+    saveApplicationsToStorage();
     
     // Update UI
     loadRecentApplications();
@@ -653,6 +669,7 @@ function applyToJob(jobId) {
     showNotification(`Application submitted for ${job.title} at ${job.company}!`, 'success');
   }
 }
+
 
 function saveJob(jobId) {
   const job = sampleJobs.find(j => j.id === jobId);
@@ -935,6 +952,55 @@ function closeResumeModal() {
   }
 }
 
+async function loadApplicationsFromFirebase() {
+  try {
+    const applications = await jobApplicationHandler.getUserApplications(20);
+    
+    // Clear existing data
+    sampleApplications.length = 0;
+    appliedJobIds.length = 0;
+
+    // Process each application
+    applications.forEach(app => {
+      // Add to applications list
+      sampleApplications.push({
+        id: app.id,
+        jobId: app.jobId,
+        jobTitle: app.jobDetails.jobTitle,
+        company: app.jobDetails.companyName,
+        appliedDate: app.applicationDate
+          ? app.applicationDate.toDate().toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        status: app.status
+      });
+
+      // Add to applied jobs tracking
+      if (!appliedJobIds.includes(app.jobId)) {
+        appliedJobIds.push(app.jobId);
+      }
+    });
+
+    // Update UI
+    loadRecentApplications();
+    updateStatistics();
+
+    // Save to localStorage as backup
+    saveApplicationsToStorage();
+
+  } catch (error) {
+    console.error('Error loading applications from Firebase:', error);
+    // Show user-friendly error message
+    if (error.message.includes('requires an index')) {
+      showNotification('Please contact support to set up required database indexes', 'error');
+    } else {
+      showNotification('Error loading applications. Please try again later.', 'error');
+    }
+    // Load from localStorage as fallback
+    loadApplicationsFromStorage();
+  }
+}
+
+
 function handleSetJobAlerts() {
   showNotification('Opening job alerts setup...', 'info');
   // In a real app, open job alerts modal or page
@@ -1045,51 +1111,9 @@ setInterval(() => {
   // In a real application, you would fetch fresh data from your API
   console.log('Auto-refreshing dashboard data...');
 }, 300000); // 5 minutes
-/*
-function showJobModal(job) {
-  const modalHTML = `
-    <div class="job-modal-overlay" onclick="this.remove()">
-      <div class="job-modal" onclick="event.stopPropagation()">
-        <button class="close-modal" onclick="document.querySelector('.job-modal-overlay').remove()">×</button>
-        <h2>${job.jobTitle}</h2>
-        <p><strong>Company:</strong> ${job.companyName}</p>
-        <p><strong>Location:</strong> ${job.location}</p>
-        <p><strong>Type:</strong> ${job.jobType || 'N/A'}</p>
-        <p><strong>Salary:</strong> ${job.salary || 'Not specified'}</p>
-        <p><strong>Description:</strong><br>${job.description}</p>
-        <div style="margin-top: 20px;">
-          <button class="apply-btn" onclick="applyToJobModal('${job.id}', '${job.jobTitle}', '${job.companyName}')">Apply for Job</button>
-        </div>
-      </div>
-    </div>
-  `;
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
 
-function applyToJobModal(jobId, title, company) {
-  if (!userProfileData || !userProfileData.profileComplete) {
-    showNotification('Please complete your profile before applying!', 'warning');
-    return;
-  }
-
-  const newApplication = {
-    id: sampleApplications.length + 1,
-    jobTitle: title,
-    company: company,
-    appliedDate: new Date().toISOString().split('T')[0],
-    status: 'pending'
-  };
-
-  sampleApplications.unshift(newApplication);
-  loadRecentApplications();
-  updateStatistics();
-  showNotification(`Applied to ${title} at ${company}`, 'success');
-  document.querySelector('.job-modal-overlay')?.remove();
-}
-*/
-
-// Updated showJobModal function - now takes index instead of job object
-function showJobModal(jobIndex) {
+// Updated showJobModal function to show application status
+async function showJobModal(jobIndex) {
   const job = currentJobs[jobIndex];
   
   if (!job) {
@@ -1097,6 +1121,12 @@ function showJobModal(jobIndex) {
     showNotification('Error loading job details', 'error');
     return;
   }
+  
+  // Find application status if exists
+  const application = sampleApplications.find(app => app.jobId === job.id);
+  const hasApplied = application && application.status !== 'withdrawn';
+  const isWithdrawn = application && application.status === 'withdrawn';
+  const applicationId = application?.id;
   
   const modalHTML = `
     <div class="job-modal-overlay" onclick="this.remove()">
@@ -1109,7 +1139,18 @@ function showJobModal(jobIndex) {
         <p><strong>Salary:</strong> ${job.salary || 'Not specified'}</p>
         <p><strong>Description:</strong><br>${job.jobDescription || job.description || 'No description available'}</p>
         <div style="margin-top: 20px;">
-          <button class="apply-btn" onclick="applyToJobModal('${job.id}', '${job.jobTitle}', '${job.companyName}')">Apply for Job</button>
+          ${hasApplied ? 
+            `<div class="application-actions">
+              <button class="withdraw-btn" onclick="withdrawApplication('${applicationId}', '${job.id}')">Withdraw Application</button>
+              <span class="applied-status">✓ Application Submitted</span>
+            </div>` :
+            isWithdrawn ?
+            `<div class="application-actions">
+              <span class="withdrawn-status">Application Withdrawn</span>
+              <button class="apply-btn" onclick="applyToJobModal('${job.id}', '${job.jobTitle}', '${job.companyName}')">Apply Again</button>
+            </div>` :
+            `<button class="apply-btn" onclick="applyToJobModal('${job.id}', '${job.jobTitle}', '${job.companyName}')">Apply for Job</button>`
+          }
         </div>
       </div>
     </div>
@@ -1118,24 +1159,277 @@ function showJobModal(jobIndex) {
 }
 
 
-function applyToJobModal(jobId, title, company) {
-  if (!userProfileData || !userProfileData.profileComplete) {
-    showNotification('Please complete your profile before applying!', 'warning');
+async function applyToJobModal(jobId, title, company) {
+  try {
+    // Show loading state
+    const applyButton = document.querySelector('.job-modal .apply-btn');
+    const originalText = applyButton.textContent;
+    applyButton.textContent = 'Applying...';
+    applyButton.disabled = true;
+
+    // Submit application using the handler
+    const result = await jobApplicationHandler.submitJobApplication(jobId);
+
+    if (result.success) {
+      // Update local tracking (keep your existing logic)
+      appliedJobIds.push(jobId);
+      
+      const newApplication = {
+        id: sampleApplications.length + 1,
+        jobId: jobId,
+        jobTitle: title,
+        company: company,
+        appliedDate: new Date().toISOString().split('T')[0],
+        status: 'pending'
+      };
+
+      sampleApplications.unshift(newApplication);
+      saveApplicationsToStorage();
+      
+      // Update UI
+      loadRecentApplications();
+      updateStatistics();
+      showNotification(result.message, 'success');
+      
+      // Close modal
+      document.querySelector('.job-modal-overlay')?.remove();
+      
+      // Refresh jobs to show updated status
+      loadFeaturedJobs();
+      
+    } else {
+      showNotification(result.message, 'error');
+      
+      // Reset button
+      applyButton.textContent = originalText;
+      applyButton.disabled = false;
+    }
+
+  } catch (error) {
+    console.error('Application error:', error);
+    showNotification('An error occurred while applying. Please try again.', 'error');
+    
+    // Reset button
+    const applyButton = document.querySelector('.job-modal .apply-btn');
+    applyButton.textContent = 'Apply for Job';
+    applyButton.disabled = false;
+  }
+}
+
+// Add function to persist applications to localStorage (optional enhancement)
+function saveApplicationsToStorage() {
+  try {
+    localStorage.setItem('jobApplications', JSON.stringify(sampleApplications));
+    localStorage.setItem('appliedJobIds', JSON.stringify(appliedJobIds));
+  } catch (error) {
+    console.warn('Could not save applications to localStorage:', error);
+  }
+}
+
+// Add function to load applications from localStorage (optional enhancement)
+function loadApplicationsFromStorage() {
+  try {
+    const savedApplications = localStorage.getItem('jobApplications');
+    const savedAppliedIds = localStorage.getItem('appliedJobIds');
+    
+    if (savedApplications) {
+      const parsedApplications = JSON.parse(savedApplications);
+      sampleApplications.push(...parsedApplications);
+    }
+    
+    if (savedAppliedIds) {
+      const parsedIds = JSON.parse(savedAppliedIds);
+      appliedJobIds.push(...parsedIds);
+    }
+  } catch (error) {
+    console.warn('Could not load applications from localStorage:', error);
+  }
+}
+
+// Add withdraw application function
+async function withdrawApplication(applicationId, jobId) {
+  if (!confirm('Are you sure you want to withdraw your application?')) {
     return;
   }
 
-  const newApplication = {
-    id: sampleApplications.length + 1,
-    jobTitle: title,
-    company: company,
-    appliedDate: new Date().toISOString().split('T')[0],
-    status: 'pending'
-  };
+  try {
+    // Show loading state
+    const withdrawButton = document.querySelector('.withdraw-btn');
+    const originalText = withdrawButton.textContent;
+    withdrawButton.textContent = 'Withdrawing...';
+    withdrawButton.disabled = true;
 
-  sampleApplications.unshift(newApplication);
-  loadRecentApplications();
-  updateStatistics();
-  showNotification(`Applied to ${title} at ${company}`, 'success');
-  document.querySelector('.job-modal-overlay')?.remove();
+    // Call Firebase to withdraw application
+    const result = await jobApplicationHandler.withdrawApplication(applicationId);
+
+    if (result.success) {
+      // Remove from local tracking using splice instead of reassignment
+      const jobIndex = appliedJobIds.indexOf(jobId);
+      if (jobIndex > -1) {
+        appliedJobIds.splice(jobIndex, 1);
+      }
+
+      const appIndex = sampleApplications.findIndex(app => app.id === applicationId);
+      if (appIndex > -1) {
+        sampleApplications.splice(appIndex, 1);
+      }
+      
+      // Update storage
+      saveApplicationsToStorage();
+      
+      // Update UI
+      loadRecentApplications();
+      updateStatistics();
+      showNotification(result.message, 'success');
+      
+      // Close modal
+      document.querySelector('.job-modal-overlay')?.remove();
+      
+      // Refresh jobs to show updated status
+      loadFeaturedJobs();
+    } else {
+      let errorMessage = result.message;
+      
+      // Handle specific error cases
+      if (result.error) {
+        if (result.error.includes('permissions')) {
+          errorMessage = 'You do not have permission to withdraw this application. Please contact support.';
+        } else if (result.error.includes('not found')) {
+          errorMessage = 'Application not found. It may have been already withdrawn.';
+        } else if (result.error.includes('stage')) {
+          errorMessage = 'This application cannot be withdrawn at this stage.';
+        }
+      }
+      
+      showNotification(errorMessage, 'error');
+      
+      // Reset button
+      withdrawButton.textContent = originalText;
+      withdrawButton.disabled = false;
+    }
+  } catch (error) {
+    console.error('Error withdrawing application:', error);
+    
+    let errorMessage = 'An error occurred while withdrawing your application.';
+    if (error.message.includes('permissions')) {
+      errorMessage = 'You do not have permission to withdraw this application. Please contact support.';
+    }
+    
+    showNotification(errorMessage, 'error');
+    
+    // Reset button
+    const withdrawButton = document.querySelector('.withdraw-btn');
+    if (withdrawButton) {
+      withdrawButton.textContent = 'Withdraw Application';
+      withdrawButton.disabled = false;
+    }
+  }
 }
 
+// Add this at the top of the file, after the existing CSS
+const style = document.createElement('style');
+style.textContent = `
+  .application-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .withdraw-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+
+  .withdraw-btn:hover {
+    background-color: #c82333;
+  }
+
+  .withdraw-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+  }
+
+  .applied-status {
+    color: #28a745;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+`;
+document.head.appendChild(style);
+
+function scheduleInterview(applicationId) {
+  const template = document.getElementById('interview-modal-template');
+  const modalContent = template.content.cloneNode(true);
+  
+  // Set minimum date to today
+  const dateInput = modalContent.getElementById('interview-date');
+  dateInput.min = new Date().toISOString().split('T')[0];
+  
+  // Add event listeners
+  const closeBtn = modalContent.querySelector('.close-modal');
+  const cancelBtn = modalContent.querySelector('.btn-secondary');
+  const scheduleBtn = modalContent.querySelector('.btn-primary');
+  
+  closeBtn.onclick = () => closeInterviewModal();
+  cancelBtn.onclick = () => closeInterviewModal();
+  scheduleBtn.onclick = () => confirmInterviewSchedule(applicationId);
+  
+  document.body.appendChild(modalContent);
+}
+
+function closeInterviewModal() {
+  const modal = document.querySelector('.interview-modal-overlay');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function confirmInterviewSchedule(applicationId) {
+  const date = document.getElementById('interview-date').value;
+  const time = document.getElementById('interview-time').value;
+  const type = document.getElementById('interview-type').value;
+  const notes = document.getElementById('interview-notes').value;
+
+  if (!date || !time) {
+    showNotification('Please select both date and time', 'error');
+    return;
+  }
+
+  const interviewDateTime = new Date(`${date}T${time}`);
+  const formattedDateTime = formatDate(interviewDateTime);
+
+  firebase.firestore()
+    .collection("applicant-post")
+    .doc(applicationId)
+    .update({
+      status: 'interview_scheduled',
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+      interviewDetails: {
+        date: date,
+        time: time,
+        type: type,
+        notes: notes,
+        scheduledAt: new Date()
+      },
+      statusHistory: firebase.firestore.FieldValue.arrayUnion({
+        status: 'interview_scheduled',
+        timestamp: new Date(),
+        notes: `Interview scheduled for ${formattedDateTime} (${type})${notes ? ` - ${notes}` : ''}`
+      })
+    })
+    .then(() => {
+      showNotification(`Interview scheduled for ${formattedDateTime}`, 'success');
+      closeInterviewModal();
+      closeReviewModal();
+      loadApplications(currentUserId);
+    });
+}

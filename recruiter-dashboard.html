@@ -89,5 +89,46 @@
 
     <script src="js/dashboard.js"></script>
     <script src="js/recruiter-dashboard.js"></script>
+
+    <!-- Interview Modal Template -->
+    <template id="interview-modal-template">
+      <div class="interview-modal-overlay">
+        <div class="interview-modal">
+          <button class="close-modal">×</button>
+          <h2>Schedule Interview</h2>
+          
+          <div class="interview-form">
+            <div class="form-group">
+              <label>Date:</label>
+              <input type="date" id="interview-date" class="form-control">
+            </div>
+            
+            <div class="form-group">
+              <label>Time:</label>
+              <input type="time" id="interview-time" class="form-control">
+            </div>
+            
+            <div class="form-group">
+              <label>Interview Type:</label>
+              <select id="interview-type" class="form-control">
+                <option value="online">Online</option>
+                <option value="in-person">In-Person</option>
+                <option value="phone">Phone</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Notes:</label>
+              <textarea id="interview-notes" class="form-control" placeholder="Add any additional notes..."></textarea>
+            </div>
+            
+            <div class="interview-actions">
+              <button class="btn btn-secondary">Cancel</button>
+              <button class="btn btn-primary">Schedule</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
   </body>
 </html>
